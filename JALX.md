@@ -1,4 +1,5 @@
 # JALX 가이드
+### JALX: Jun’s Articulated Layered eXpression
 
 이 문서는 **1. 배우기 → 2. 사용해보기 → 3. 다른 포맷과 비교 → 4. 예제** 순서로 구성되어 있다.
 문법 세부 규칙은 `JALX_SPEC.md`를 참고. 여기서는 실전 위주로 다룬다.
