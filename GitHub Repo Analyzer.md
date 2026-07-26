@@ -3,7 +3,7 @@
 > 정렬 기능
 > 확장자 탐색기능
 > 디자인 세련 됨.
-#```<!DOCTYPE html>
+# ```<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
