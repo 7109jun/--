@@ -10,25 +10,29 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>JRL (JUN RRRR LOVE) - 최적화된 양방향 변환기</title>
+    <title>JRL - Platform Tag Protocol</title>
     <style>
         :root {
-            --bg-color: #050505;
-            --panel-bg: #0f0f0f;
-            --primary: #ff003c;
-            --secondary: #00f0ff;
-            --text: #f0f0f0;
+            --bg: #0f1115;
+            --card-bg: #161920;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #2d3748;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg);
             color: var(--text);
-            font-family: 'Courier New', Courier, monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
-            padding: 40px;
+            padding: 40px 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
 
         header {
@@ -37,242 +41,217 @@
         }
 
         h1 {
-            color: var(--primary);
-            text-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
-            font-size: 2.2rem;
+            font-size: 2.5rem;
+            font-weight: 800;
             margin: 0;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.025em;
         }
 
         p.subtitle {
-            color: #777;
-            font-size: 0.9rem;
-            margin-top: 10px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-top: 8px;
         }
 
         .container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
+            gap: 24px;
             width: 100%;
-            max-width: 1000px;
+            max-width: 900px;
         }
 
-        .panel {
-            background-color: var(--panel-bg);
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 0 20px rgba(255, 0, 60, 0.15);
-            position: relative;
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .panel::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
         h2 {
-            color: var(--secondary);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
             margin-top: 0;
-            border-bottom: 1px dashed #333;
-            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         label {
             display: block;
-            margin-top: 15px;
             font-size: 0.85rem;
-            color: #aaa;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 6px;
         }
 
         textarea, input[type="text"] {
             width: 100%;
-            background: #000;
-            border: 1px solid #444;
+            background: #0b0d10;
+            border: 1px solid var(--border);
             color: var(--text);
             padding: 12px;
-            margin-top: 5px;
             box-sizing: border-box;
-            font-family: monospace;
-            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            border-radius: 8px;
             resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         textarea:focus, input[type="text"]:focus {
-            border-color: var(--secondary);
+            border-color: var(--accent);
             outline: none;
-            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
         }
 
         button {
-            background: linear-gradient(135deg, var(--primary), #990022);
+            background-color: var(--accent);
             color: white;
             border: none;
-            padding: 12px 20px;
-            margin-top: 20px;
+            padding: 12px;
+            margin-top: 16px;
             width: 100%;
-            font-weight: bold;
-            font-family: monospace;
+            font-weight: 600;
+            font-size: 0.9rem;
             cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s ease;
+            border-radius: 8px;
+            transition: background-color 0.2s;
         }
 
         button:hover {
-            background: linear-gradient(135deg, #ff1a48, var(--primary));
-            box-shadow: 0 0 12px rgba(255, 0, 60, 0.7);
+            background-color: var(--accent-hover);
         }
 
         .result-box {
-            margin-top: 20px;
-            padding: 15px;
-            background: #000;
-            border: 1px dashed var(--secondary);
-            min-height: 50px;
+            margin-top: 16px;
+            padding: 12px;
+            background: #0b0d10;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-height: 24px;
             word-break: break-all;
-            font-size: 1.1rem;
-            color: var(--secondary);
+            font-size: 0.95rem;
+            color: #818cf8;
+            font-family: monospace;
         }
 
-        .error {
-            color: var(--primary) !important;
-            border-color: var(--primary) !important;
-        }
-
-        .spec-info {
-            margin-top: 40px;
-            font-size: 0.75rem;
-            color: #555;
+        footer {
+            margin-top: 60px;
             text-align: center;
-            border-top: 1px solid #111;
-            padding-top: 15px;
-            width: 100%;
-            max-width: 1000px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🔪 JRL OPTIMIZED ENGINE</h1>
-        <p class="subtitle">규격: [JRL:][고유ID][JRL] (전체 글자수 13글자 제한 완벽 준수)</p>
+        <h1>JRL Protocol</h1>
+        <p class="subtitle">Platform Tagged URL Compression Engine (JRL:[PLATFORM]JRL)</p>
     </header>
 
     <div class="container">
         <!-- 압축 패널 -->
-        <div class="panel">
-            <h2>[단계 1] 사지절단 압축 (URL ➔ JRL)</h2>
-            <label for="urlInput">대상 URL 입력</label>
-            <textarea id="urlInput" rows="3" placeholder="https://example.com/very/long/path">https://very-long-annoying-domain.com/path/to/page?id=12345&token=abcdef</textarea>
+        <div class="card">
+            <h2>🔗 Generate JRL</h2>
+            <label for="urlInput">Source URL</label>
+            <textarea id="urlInput" rows="3" placeholder="https://github.com/...">https://github.com/7109jun/--/blob/main/JRL.md</textarea>
             
-            <button onclick="compressToJRL()">JRL로 봉인하기</button>
+            <button onclick="generatePlatformJRL()">Generate JRL Tag</button>
             
-            <label>생성된 JRL 규격</label>
+            <label style="margin-top: 16px;">Result</label>
             <div class="result-box" id="jrlOutput">대기 중...</div>
         </div>
 
         <!-- 복원 패널 -->
-        <div class="panel">
-            <h2>[단계 2] 부활 의식 (JRL ➔ URL)</h2>
-            <label for="jrlInput">JRL 입력 (예: JRL:A1B2JRL)</label>
-            <input type="text" id="jrlInput" placeholder="JRL:고유IDJRL 형식 입력">
+        <div class="card">
+            <h2>🔓 Restore JRL</h2>
+            <label for="jrlInput">JRL Code</label>
+            <input type="text" id="jrlInput" placeholder="JRL:GITHUBJRL">
             
-            <button onclick="restoreFromJRL()">원래 URL로 부활시키기</button>
+            <button onclick="restorePlatformJRL()">Restore URL</button>
             
-            <label>복원된 원본 URL</label>
+            <label style="margin-top: 16px;">Result</label>
             <div class="result-box" id="urlOutput">대기 중...</div>
         </div>
     </div>
 
-    <div class="spec-info">
-        JRL SYSTEM v2.0 — "JUN RRRR LOVE" ARCHITECTURE.
-    </div>
+    <footer>
+        &copy; 2026 JRL Architecture. "JUN RRRR LOVE"
+    </footer>
 
     <script>
-        // 로컬 데이터베이스 및 카운터 불러오기 (충돌 방지 최적화)
-        let db = JSON.parse(localStorage.getItem('jrl_opt_db') || '{}');
-        let counter = parseInt(localStorage.getItem('jrl_opt_counter') || '1000', 10);
+        // 로컬 DB 연동
+        const db = JSON.parse(localStorage.getItem('jrl_platform_db') || '{}');
 
-        // 이미 등록된 URL인지 확인하는 역방향 룩업맵 생성
-        let reverseMap = {};
-        for (let key in db) {
-            reverseMap[db[key]] = key;
+        function generatePlatformJRL() {
+            const urlInput = document.getElementById('urlInput').value.trim();
+            const outputBox = id => document.getElementById(id);
+
+            if (!urlInput) {
+                outputBox('jrlOutput').innerText = "URL을 입력해주세요.";
+                return;
+            }
+
+            let platformName = "WEB"; // 기본값
+
+            try {
+                // URL 파싱을 통해 도메인 추출
+                let urlObj = new URL(urlInput);
+                let hostname = urlObj.hostname.toLowerCase(); // 예: github.com, youtube.com
+
+                // 서브도메인 및 확장자(.com, .co.kr 등) 제거하고 순수 플랫폼 명칭 추출
+                let parts = hostname.replace('www.', '').split('.');
+                if (parts.length > 0) {
+                    platformName = parts[0].toUpperCase(); // 예: github, naver -> GITHUB, NAVER
+                }
+            } catch (e) {
+                platformName = "UNKNOWN";
+            }
+
+            // 규격 완성: JRL:[PLATFORM]JRL (최대 13글자 제한 방어를 위해 플랫폼명은 최대 6글자로 절단)
+            if (platformName.length > 6) {
+                platformName = platformName.substring(0, 6);
+            }
+
+            const finalJRL = `JRL:${platformName}JRL`;
+
+            // DB에 매핑 저장 (동일 플랫폼이라도 최신 입력된 URL로 갱신)
+            db[finalJRL] = urlInput;
+            localStorage.setItem('jrl_platform_db', JSON.stringify(db));
+
+            outputBox('jrlOutput').innerHTML = `<strong>${finalJRL}</strong>`;
         }
 
-        function compressToJRL() {
-            const url = document.getElementById('urlInput').value.trim();
-            const outputBox = document.getElementById('jrlOutput');
-
-            if (!url) {
-                outputBox.className = "result-box error";
-                outputBox.innerText = "[오류] URL이 비어 있습니다.";
-                return;
-            }
-
-            // 이미 압축된 적 있는 URL이라면 기존 JRL을 재활용 (중복 생성 방지 최적화)
-            if (reverseMap[url]) {
-                const existingJRL = reverseMap[url];
-                outputBox.className = "result-box";
-                outputBox.innerHTML = `<strong>${existingJRL}</strong> <span style="font-size:0.8rem; color:#888;">(캐시 재사용, 총 ${existingJRL.length}글자)</span>`;
-                return;
-            }
-
-            // 고유 ID 생성 (카운터를 36진수로 변환해 짧고 고유하게 유지)
-            let uniqueId = counter.toString(36).toUpperCase();
-            counter++;
-            localStorage.setItem('jrl_opt_counter', counter);
-
-            // 전체 JRL 구조 조합: "JRL:" (4자) + uniqueId (최대 6자) + "JRL" (3자) = 최대 13자
-            if (uniqueId.length > 6) {
-                uniqueId = uniqueId.slice(-6); // 넘치면 뒤 6자리만 사용
-            }
-            const finalJRL = `JRL:${uniqueId}JRL`;
-
-            // 규격 최종 검수
-            if (finalJRL.length > 13) {
-                outputBox.className = "result-box error";
-                outputBox.innerText = `[치명적 오류] 규격 위반! (${finalJRL.length}글자 > 13글자 제한)`;
-                return;
-            }
-
-            // DB 저장
-            db[finalJRL] = url;
-            reverseMap[url] = finalJRL;
-            localStorage.setItem('jrl_opt_db', JSON.stringify(db));
-
-            // 출력
-            outputBox.className = "result-box";
-            outputBox.innerHTML = `<strong>${finalJRL}</strong> <span style="font-size:0.8rem; color:#888;">(총 ${finalJRL.length}글자)</span>`;
-        }
-
-        function restoreFromJRL() {
-            let jrlQuery = document.getElementById('jrlInput').value.trim().toUpperCase();
+        function restorePlatformJRL() {
+            const jrlInput = document.getElementById('jrlInput').value.trim().toUpperCase();
             const outputBox = document.getElementById('urlOutput');
 
-            if (!jrlQuery) {
-                outputBox.className = "result-box error";
-                outputBox.innerText = "[오류] JRL을 입력해주세요.";
+            if (!jrlInput) {
+                outputBox.innerText = "JRL 코드를 입력해주세요.";
                 return;
             }
 
-            if (jrlQuery.length > 13) {
-                outputBox.className = "result-box error";
-                outputBox.innerText = "[오류] 입력된 JRL이 13글자 규격 제한을 초과했습니다.";
-                return;
-            }
-
-            if (db[jrlQuery]) {
-                const originalUrl = db[jrlQuery];
-                outputBox.className = "result-box";
-                outputBox.innerHTML = `<a href="${originalUrl}" target="_blank" style="color:var(--secondary); text-decoration:underline;">${originalUrl}</a>`;
+            if (db[jrlInput]) {
+                const originalUrl = db[jrlInput];
+                outputBox.innerHTML = `<a href="${originalUrl}" target="_blank" style="color:#818cf8; text-decoration:underline;">${originalUrl}</a>`;
             } else {
-                outputBox.className = "result-box error";
-                outputBox.innerText = "[오류] 데이터베이스에 존재하지 않는 JRL 영혼입니다.";
+                outputBox.innerText = "데이터베이스에 존재하지 않는 JRL 태그입니다.";
             }
         }
     </script>
 </body>
-</html>```
+</html>
