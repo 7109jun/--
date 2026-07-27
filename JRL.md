@@ -5,8 +5,7 @@
 > 매우 엄청나!
 >
 > 압축률은 그래도 높습네다.
-코드:
-```<!DOCTYPE html>
+코드:```<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -21,11 +20,11 @@ body{
   padding:40px 20px;
 }
 h1{font-size:2rem;font-weight:700;color:#6366f1;margin-bottom:6px;letter-spacing:1px}
-.subtitle{color:#94a3b8;font-size:.88rem;margin-bottom:36px;text-align:center}
+.subtitle{color:#94a3b8;font-size:.88rem;margin-bottom:12px;text-align:center}
 .badge{
   display:inline-block;background:#1e2230;border:1px solid #6366f1;
-  color:#6366f1;font-size:.7rem;padding:3px 10px;border-radius:20px;
-  margin-bottom:30px;letter-spacing:1px;
+  color:#6366f1;font-size:.68rem;padding:3px 12px;border-radius:20px;
+  margin-bottom:32px;letter-spacing:1px;
 }
 .container{
   display:grid;grid-template-columns:1fr 1fr;gap:28px;
@@ -80,7 +79,7 @@ button:active{transform:translateY(0)}
 .err{color:#ef4444;font-size:.84rem;margin-top:10px;text-align:center;min-height:20px}
 .dict-hint{
   margin-top:18px;padding:14px;background:#1a1e28;border-radius:8px;
-  font-size:.75rem;color:#64748b;line-height:1.7;
+  font-size:.73rem;color:#64748b;line-height:1.8;
 }
 .dict-hint strong{color:#94a3b8}
 </style>
@@ -89,11 +88,10 @@ button:active{transform:translateY(0)}
 
 <h1>JRL Protocol v6.0</h1>
 <p class="subtitle">Stateless · Zero-Storage · 13-Char Fixed-Format URL Compression Engine</p>
-<span class="badge">NO LocalStorage · NO SessionStorage · NO Server · NO DB</span>
+<span class="badge">NO LocalStorage · NO SessionStorage · NO Server · NO DB · PURE FUNCTION ONLY</span>
 
 <div class="container">
 
-  <!-- ===== ENCODE PANEL ===== -->
   <div class="panel">
     <div class="panel-title">무손실 인코딩 (Encode)</div>
     <label for="inUrl">URL 입력</label>
@@ -106,17 +104,16 @@ button:active{transform:translateY(0)}
     </div>
     <p class="info">결과 상자를 클릭하면 클립보드에 즉시 복사됩니다</p>
     <div class="dict-hint">
-      <strong>Track 1 고정 사전 등록 도메인:</strong><br>
-      github.com · google.com · naver.com · youtube.com · daum.net ·
-      namu.wiki · twitter.com · facebook.com · instagram.com ·
-      reddit.com · wikipedia.org · stackoverflow.com 외 다수
+      <strong>Track 1 고정 사전 (40개 도메인):</strong><br>
+      github · google · naver · youtube · daum · namu.wiki · twitter · x.com ·
+      facebook · instagram · linkedin · reddit · wikipedia · stackoverflow ·
+      netflix · amazon · twitch · discord · notion · vercel
     </div>
   </div>
 
-  <!-- ===== DECODE PANEL ===== -->
   <div class="panel">
     <div class="panel-title">무손실 복원 (Decode)</div>
-    <label for="inJrl">JRL 코드 입력 (13글자)</label>
+    <label for="inJrl">JRL 코드 입력 (고정 13글자)</label>
     <input type="text" id="inJrl" placeholder="JRL:GH0001JRL" maxlength="13" spellcheck="false">
     <button onclick="handleDecode()">🔓 URL 복원</button>
     <div class="err" id="decErr"></div>
@@ -126,23 +123,25 @@ button:active{transform:translateY(0)}
     </div>
     <p class="info">결과 상자를 클릭하면 클립보드에 즉시 복사됩니다</p>
     <div class="dict-hint">
-      <strong>Track 2 동적 비트 압축 구조 (6글자 페이로드):</strong><br>
-      [0] 프로토콜 토큰 · [1] www 플래그 · [2] TLD 토큰 ·
-      [3-5] 도메인 축약 · 잔여 공간 X 패딩
+      <strong>Track 2 동적 비트 압축 (6글자 페이로드):</strong><br>
+      [0] 프로토콜(H/T/F) · [1] www(W/X) · [2] TLD토큰 ·
+      [3-5] 도메인 Base62 · 잔여 X패딩 · 완전 대칭 역산
     </div>
   </div>
 
 </div>
 
 <script>
-/* ==========================================================
+/* ============================================================
    JRL Protocol v6.0 — Pure Stateless Engine
-   ❌ localStorage  ❌ sessionStorage  ❌ fetch  ❌ XMLHttpRequest
-   모든 매핑은 아래 상수 객체에 하드코딩되어 있으며,
-   인코딩/디코딩은 순수 함수(Pure Function)로만 동작한다.
-   ========================================================== */
+   ❌ localStorage   ❌ sessionStorage
+   ❌ fetch          ❌ XMLHttpRequest
+   ❌ IndexedDB      ❌ document.cookie
+   모든 매핑은 아래 상수 객체에 하드코딩.
+   encode / decode 는 순수 함수(Pure Function)로만 동작.
+   ============================================================ */
 
-/* ---------- Track 1 : 고정 사전 (양방향) ---------- */
+/* -------- Track 1 : 고정 사전 (양방향 40개) -------- */
 var FIXED_URL_TO_CODE = {
   'https://github.com':'GH0001',
   'https://www.github.com':'GH0002',
@@ -187,204 +186,228 @@ var FIXED_URL_TO_CODE = {
 };
 
 var FIXED_CODE_TO_URL = {};
-(function(){
-  var keys = Object.keys(FIXED_URL_TO_CODE);
-  for(var i=0;i<keys.length;i++){
-    FIXED_CODE_TO_URL[FIXED_URL_TO_CODE[keys[i]]] = keys[i];
-  }
+(function () {
+  var k = Object.keys(FIXED_URL_TO_CODE);
+  for (var i = 0; i < k.length; i++) FIXED_CODE_TO_URL[FIXED_URL_TO_CODE[k[i]]] = k[i];
 })();
 
-/* ---------- Track 2 : 동적 압축 매핑 사전 ---------- */
-var PROTO_ENC = {'https://':'H','http://':'T','ftp://':'F'};
-var PROTO_DEC = {'H':'https://','T':'http://','F':'ftp://'};
+/* -------- Track 2 : 동적 압축 매핑 -------- */
+var PROTO_ENC = { 'https://': 'H', 'http://': 'T', 'ftp://': 'F' };
+var PROTO_DEC = { 'H': 'https://', 'T': 'http://', 'F': 'ftp://' };
 
 var TLD_ENC = {
-  '.com':'C','.net':'N','.org':'O','.co.kr':'K','.io':'I',
-  '.dev':'D','.edu':'E','.gov':'G','.kr':'R','.jp':'J',
-  '.cn':'A','.uk':'U','.de':'M','.fr':'Q','.me':'S',
-  '.app':'P','.xyz':'X','.tech':'Y','.ai':'Z','.tv':'V',
-  '.so':'B','.info':'L','.biz':'W'
+  '.co.kr': 'K', '.com': 'C', '.net': 'N', '.org': 'O', '.io': 'I',
+  '.dev': 'D', '.edu': 'E', '.gov': 'G', '.kr': 'R', '.jp': 'J',
+  '.cn': 'A', '.uk': 'U', '.de': 'M', '.fr': 'Q', '.me': 'S',
+  '.app': 'P', '.xyz': 'x', '.tech': 'Y', '.ai': 'Z', '.tv': 'V',
+  '.so': 'B', '.info': 'L', '.biz': 'W'
 };
 var TLD_DEC = {};
-(function(){
-  var keys = Object.keys(TLD_ENC);
-  for(var i=0;i<keys.length;i++){
-    TLD_DEC[TLD_ENC[keys[i]]] = keys[i];
-  }
+(function () {
+  var k = Object.keys(TLD_ENC);
+  for (var i = 0; i < k.length; i++) TLD_DEC[TLD_ENC[k[i]]] = k[i];
 })();
 
 var B62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+var B62_CAP = 62 * 62 * 62;
 
-/* ---------- 핵심 인코더 ---------- */
-function encodeAbsoluteJRL(rawUrl){
-  if(!rawUrl || typeof rawUrl!=='string') throw new Error('유효하지 않은 URL입니다.');
+/* -------- Base62 도메인 인코더 / 디코더 (완전 대칭) -------- */
+function domainToNum(domain) {
+  var num = 0;
+  for (var i = 0; i < domain.length; i++) {
+    var idx = B62.indexOf(domain[i]);
+    if (idx === -1) idx = 0;
+    num = num * 62 + idx;
+  }
+  return num;
+}
+
+function numToDomain(num) {
+  if (num <= 0) return 'a';
+  var s = '';
+  while (num > 0) {
+    s = B62[num % 62] + s;
+    num = Math.floor(num / 62);
+  }
+  return s;
+}
+
+function encDom3(domain) {
+  var num = domainToNum(domain) % B62_CAP;
+  var out = '';
+  for (var i = 0; i < 3; i++) {
+    out = B62[num % 62] + out;
+    num = Math.floor(num / 62);
+  }
+  return out;
+}
+
+function decDom3(enc) {
+  var num = 0;
+  for (var i = 0; i < enc.length; i++) {
+    var idx = B62.indexOf(enc[i]);
+    if (idx === -1) idx = 0;
+    num = num * 62 + idx;
+  }
+  return numToDomain(num);
+}
+
+/* -------- 핵심 인코더 -------- */
+function encodeAbsoluteJRL(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') throw new Error('유효하지 않은 URL입니다.');
   var url = rawUrl.trim();
 
-  /* Track 1: 고정 사전 히트 */
-  if(FIXED_URL_TO_CODE[url]){
-    return 'JRL:' + FIXED_URL_TO_CODE[url] + 'JRL';
-  }
+  if (FIXED_URL_TO_CODE[url]) return 'JRL:' + FIXED_URL_TO_CODE[url] + 'JRL';
 
-  /* Track 2: 동적 비트 압축 */
   var rest = url;
   var pTok = 'H';
-  var protoKeys = Object.keys(PROTO_ENC);
-  for(var i=0;i<protoKeys.length;i++){
-    if(rest.indexOf(protoKeys[i])===0){
-      pTok = PROTO_ENC[protoKeys[i]];
-      rest = rest.substring(protoKeys[i].length);
+  var pKeys = Object.keys(PROTO_ENC);
+  for (var i = 0; i < pKeys.length; i++) {
+    if (rest.indexOf(pKeys[i]) === 0) {
+      pTok = PROTO_ENC[pKeys[i]];
+      rest = rest.substring(pKeys[i].length);
       break;
     }
   }
 
   var wTok = 'X';
-  if(rest.indexOf('www.')===0){
+  if (rest.indexOf('www.') === 0) {
     wTok = 'W';
     rest = rest.substring(4);
   }
 
   var slashIdx = rest.indexOf('/');
-  var hostPart = slashIdx===-1 ? rest : rest.substring(0,slashIdx);
+  var host = slashIdx === -1 ? rest : rest.substring(0, slashIdx);
 
   var tTok = 'C';
-  var domain = hostPart;
-  var tldKeys = Object.keys(TLD_ENC).sort(function(a,b){return b.length-a.length;});
-  for(var j=0;j<tldKeys.length;j++){
-    if(hostPart.length > tldKeys[j].length &&
-       hostPart.substring(hostPart.length - tldKeys[j].length) === tldKeys[j]){
-      tTok = TLD_ENC[tldKeys[j]];
-      domain = hostPart.substring(0, hostPart.length - tldKeys[j].length);
+  var domain = host;
+  var tKeys = Object.keys(TLD_ENC).sort(function (a, b) { return b.length - a.length; });
+  for (var j = 0; j < tKeys.length; j++) {
+    if (host.length > tKeys[j].length && host.slice(-tKeys[j].length) === tKeys[j]) {
+      tTok = TLD_ENC[tKeys[j]];
+      domain = host.substring(0, host.length - tKeys[j].length);
       break;
     }
   }
 
-  var dEnc = '';
-  for(var k=0;k<domain.length && dEnc.length<3;k++){
-    var ch = domain[k];
-    if(B62.indexOf(ch)!==-1){
-      dEnc += ch;
-    }
-  }
-  while(dEnc.length<3) dEnc += 'X';
-
+  var dEnc = encDom3(domain);
   var payload = pTok + wTok + tTok + dEnc;
-  while(payload.length<6) payload += 'X';
-  payload = payload.substring(0,6);
+
+  while (payload.length < 6) payload += 'X';
+  payload = payload.substring(0, 6);
 
   return 'JRL:' + payload + 'JRL';
 }
 
-/* ---------- 핵심 디코더 ---------- */
-function decodeAbsoluteJRL(rawJrl){
-  if(!rawJrl || typeof rawJrl!=='string') throw new Error('유효하지 않은 JRL 코드입니다.');
+/* -------- 핵심 디코더 -------- */
+function decodeAbsoluteJRL(rawJrl) {
+  if (!rawJrl || typeof rawJrl !== 'string') throw new Error('유효하지 않은 JRL 코드입니다.');
   var jrl = rawJrl.trim();
 
-  if(jrl.length!==13) throw new Error('JRL 코드는 정확히 13글자여야 합니다. (현재 '+jrl.length+'글자)');
-  if(jrl.substring(0,4)!=='JRL:') throw new Error('접두사 "JRL:" 형식이 올바르지 않습니다.');
-  if(jrl.substring(10,13)!=='JRL') throw new Error('접미사 "JRL" 형식이 올바르지 않습니다.');
+  if (jrl.length !== 13) throw new Error('JRL 코드는 정확히 13글자여야 합니다. (현재 ' + jrl.length + '글자)');
+  if (jrl.substring(0, 4) !== 'JRL:') throw new Error('접두사 "JRL:" 형식이 올바르지 않습니다.');
+  if (jrl.substring(10, 13) !== 'JRL') throw new Error('접미사 "JRL" 형식이 올바르지 않습니다.');
 
-  var payload = jrl.substring(4,10);
+  var payload = jrl.substring(4, 10);
 
-  /* Track 1: 고정 사전 역매핑 */
-  if(FIXED_CODE_TO_URL[payload]){
-    return FIXED_CODE_TO_URL[payload];
-  }
+  if (FIXED_CODE_TO_URL[payload]) return FIXED_CODE_TO_URL[payload];
 
-  /* Track 2: 동적 역치환 복원 */
-  var cleaned = payload.replace(/X+$/,'');
-  if(cleaned.length<3) throw new Error('페이로드 정보가 부족하여 복원할 수 없습니다.');
-
-  var pTok = cleaned[0];
-  var wTok = cleaned.length>1 ? cleaned[1] : 'X';
-  var tTok = cleaned.length>2 ? cleaned[2] : 'C';
-  var dRaw = cleaned.length>3 ? cleaned.substring(3) : '';
+  var pTok = payload[0];
+  var wTok = payload[1];
+  var tTok = payload[2];
+  var dEnc = payload.substring(3, 6);
 
   var protocol = PROTO_DEC[pTok] || 'https://';
-  var www      = (wTok==='W') ? 'www.' : '';
-  var tld      = TLD_DEC[tTok] || '.com';
-  var domain   = dRaw.replace(/X/g,'');
+  var www = (wTok === 'W') ? 'www.' : '';
+  var tld = TLD_DEC[tTok] || '.com';
+  var domain = decDom3(dEnc);
 
-  if(!domain) throw new Error('도메인 정보를 복원할 수 없습니다.');
+  if (!domain) throw new Error('도메인 정보를 복원할 수 없습니다.');
 
   return protocol + www + domain + tld;
 }
 
-/* ---------- UI 핸들러 ---------- */
-function handleEncode(){
+/* -------- UI 핸들러 -------- */
+function handleEncode() {
   var inp = document.getElementById('inUrl');
   var res = document.getElementById('encRes');
   var err = document.getElementById('encErr');
   err.textContent = '';
-  try{
-    if(!inp.value.trim()) throw new Error('URL을 입력해주세요.');
+  try {
+    if (!inp.value.trim()) throw new Error('URL을 입력해주세요.');
     var code = encodeAbsoluteJRL(inp.value);
     res.textContent = code;
     res.style.color = '#10b981';
-  }catch(e){
+  } catch (e) {
     res.textContent = 'ERROR';
     res.style.color = '#ef4444';
     err.textContent = e.message;
   }
 }
 
-function handleDecode(){
+function handleDecode() {
   var inp = document.getElementById('inJrl');
   var res = document.getElementById('decRes');
   var err = document.getElementById('decErr');
   err.textContent = '';
-  try{
-    if(!inp.value.trim()) throw new Error('JRL 코드를 입력해주세요.');
+  try {
+    if (!inp.value.trim()) throw new Error('JRL 코드를 입력해주세요.');
     var url = decodeAbsoluteJRL(inp.value);
     res.textContent = url;
     res.style.color = '#10b981';
-  }catch(e){
+  } catch (e) {
     res.textContent = 'ERROR';
     res.style.color = '#ef4444';
     err.textContent = e.message;
   }
 }
 
-/* ---------- 클립보드 복사 유틸리티 ---------- */
-function clip(elId){
-  var el  = document.getElementById(elId);
+/* -------- 클립보드 복사 유틸리티 -------- */
+function clip(elId) {
+  var el = document.getElementById(elId);
   var txt = el.textContent;
-  if(txt==='---'||txt==='ERROR') return;
+  if (txt === '---' || txt === 'ERROR') return;
 
-  navigator.clipboard.writeText(txt).then(function(){
-    var msgId = (elId==='encRes') ? 'encMsg' : 'decMsg';
-    var msg   = document.getElementById(msgId);
+  var msgId = (elId === 'encRes') ? 'encMsg' : 'decMsg';
+  var msg = document.getElementById(msgId);
+
+  function showDone() {
     el.classList.add('copied');
     msg.classList.add('show');
-    setTimeout(function(){
+    setTimeout(function () {
       el.classList.remove('copied');
       msg.classList.remove('show');
-    },1500);
-  }).catch(function(){
-    var ta = document.createElement('textarea');
-    ta.value = txt;
-    ta.style.position = 'fixed';
-    ta.style.opacity  = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    var msgId2 = (elId==='encRes') ? 'encMsg' : 'decMsg';
-    var msg2   = document.getElementById(msgId2);
-    el.classList.add('copied');
-    msg2.classList.add('show');
-    setTimeout(function(){
-      el.classList.remove('copied');
-      msg2.classList.remove('show');
-    },1500);
-  });
+    }, 1500);
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(showDone).catch(function () {
+      fallbackCopy(txt);
+      showDone();
+    });
+  } else {
+    fallbackCopy(txt);
+    showDone();
+  }
 }
 
-/* ---------- Enter 키 지원 ---------- */
-document.getElementById('inUrl').addEventListener('keydown',function(e){
-  if(e.key==='Enter') handleEncode();
+function fallbackCopy(txt) {
+  var ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
+/* -------- Enter 키 지원 -------- */
+document.getElementById('inUrl').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') handleEncode();
 });
-document.getElementById('inJrl').addEventListener('keydown',function(e){
-  if(e.key==='Enter') handleDecode();
+document.getElementById('inJrl').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') handleDecode();
 });
 </script>
 </body>
