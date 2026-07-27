@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LJM Viewer v2.0 — LiveJMark Runtime</title>
+<style>
+:root{
+  --bg:#1e1e1e;--panel:#252526;--border:#3e3e42;--accent:#007acc;
+  --txt:#d4d4d4;--err:#f48771;--warn:#cca700;--ok:#89d185;--dim:#666;
+}
+*{box-sizing:border-box;margin:0;padding:0;outline:none}
+body{font-family:Consolas,'Courier New',monospace;background:var(--bg);color:var(--txt);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Toolbar ── */
+.tb{height:42px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:6px}
+.tb button{background:var(--bg);border:1px solid var(--border);color:var(--txt);padding:5px 14px;font:12px/1 inherit;cursor:pointer;border-radius:3px;transition:.15s}
+.tb button:hover{background:var(--border)}
+.tb button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.tb button.pri:hover{filter:brightness(1.15)}
+.tb .sep{width:1px;height:22px;background:var(--border);margin:0 4px}
+.tb .title{margin-left:auto;font-size:11px;color:var(--dim)}
+
+/* ── Layout ── */
+.wrap{display:flex;flex:1;min-height:0}
+.ed{width:44%;display:flex;flex-direction:column;border-right:1px solid var(--border)}
+.vw{width:56%;position:relative;background:#0a0a0a;overflow:hidden}
+#editor{flex:1;background:var(--bg);color:var(--txt);border:none;resize:none;padding:14px;font:14px/1.7 inherit;tab-size:2}
+#renderArea{width:100%;height:100%;position:relative;transform-origin:center center;overflow-y:auto;padding:20px}
+/* Custom Scrollbar for Render Area */
+#renderArea::-webkit-scrollbar { width: 8px; }
+#renderArea::-webkit-scrollbar-track { background: #0a0a0a; }
+#renderArea::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+/* ── Console ── */
+.con{height:155px;background:var(--panel);border-top:1px solid var(--border);display:flex;flex-direction:column}
+.con-h{padding:4px 12px;font-size:11px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.con-h span:last-child{cursor:pointer;color:var(--dim)}
+.con-h span:last-child:hover{color:var(--txt)}
+#cout{flex:1;overflow-y:auto;padding:8px 12px;font-size:12px}
+.lg{margin-bottom:2px;word-break:break-all}
+.lg.e{color:var(--err)}.lg.w{color:var(--warn)}.lg.i{color:var(--ok)}.lg.d{color:var(--dim)}
+.lg .m{opacity:.55;font-size:10px;margin-left:8px}
+
+/* ── LJM Render Elements ── */
+.ljm-el{position:relative;display:inline-block;margin:2px 0;vertical-align:top}
+.ljm-quote{border-left:3px solid var(--accent);padding:4px 12px;margin:6px 0;opacity:.92;font-style:italic;display:block}
+.ljm-code{background:#111;border:1px solid #333;border-radius:4px;padding:10px;margin:6px 0;font-size:12px;color:#9cdcfe;white-space:pre-wrap}
+.ljm-api{background:#12261a;border:1px solid #1e4a2e;border-radius:4px;padding:8px;margin:6px 0;font-size:11px;color:#7fca8f;white-space:pre-wrap;max-height:200px;overflow-y:auto}
+.ljm-page{animation:pgIn .4s ease}
+@keyframes pgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<div class="tb">
+  <button onclick="APP.file.open()">Open (.ljm)</button>
+  <button onclick="APP.file.save()">Save (.ljm)</button>
+  <div class="sep"></div>
+  <button class="pri" onclick="APP.runtime.run()">▶ Render</button>
+  <button onclick="APP.runtime.stop()">■ Stop</button>
+  <button onclick="APP.runtime.clear()">✕ Clear</button>
+  <span class="title">LJM Viewer v2.0 · LiveJMark Runtime</span>
+</div>
+
+<div class="wrap">
+  <div class="ed"><textarea id="editor" spellcheck="false"></textarea></div>
+  <div class="vw"><div id="renderArea"></div></div>
+</div>
+
+<div class="con">
+  <div class="con-h"><span>Console</span><span onclick="APP.console.clear()">Clear</span></div>
+  <div id="cout"></div>
+</div>
+
+<input type="file" id="fi" accept=".ljm,.txt">
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════
+   §0  UTILITIES
+   ═══════════════════════════════════════════════════ */
+const U = {
+  esc: s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),
+  id:  () => 'ljm_' + Math.random().toString(36).slice(2,10),
+  ms:  s => typeof s==='number'? s : String(s).endsWith('ms')? parseFloat(s) : parseFloat(s)*1000,
+};
+
+/* ═══════════════════════════════════════════════════
+   §1  ConsoleManager
+   ═══════════════════════════════════════════════════ */
+class ConsoleManager {
+  constructor(){ this.el = document.getElementById('cout'); }
+  _add(msg,cls,line,col){
+    const d = document.createElement('div');
+    d.className = 'lg '+cls;
+    const meta = line!=null ? `<span class="m">Line ${line}${col!=null?', Col '+col:''}</span>` : '';
+    d.innerHTML = `<span>[${new Date().toLocaleTimeString()}]</span> ${U.esc(msg)}${meta}`;
+    this.el.appendChild(d);
+    this.el.scrollTop = this.el.scrollHeight;
+  }
+  error(m,l,c){ this._add(m,'e',l,c); }
+  warn(m,l,c) { this._add(m,'w',l,c); }
+  info(m)     { this._add(m,'i'); }
+  debug(m)    { this._add(m,'d'); }
+  clear()     { this.el.innerHTML=''; }
+}
+
+/* ═══════════════════════════════════════════════════
+   §2  MathParser (Safe Recursive Descent)
+   ═══════════════════════════════════════════════════ */
+class MathParser {
+  constructor(expr){ this.s=expr.replace(/\s/g,''); this.p=0; }
+  static eval(expr){ 
+    if(!expr) return 0;
+    try { return new MathParser(expr).parseExpr(); } 
+    catch(e) { throw new Error("Math Syntax Error"); }
+  }
+  ch(){ return this.s[this.p]; }
+  parseExpr(){
+    let v = this.parseTerm();
+    while(this.p<this.s.length && (this.ch()==='+'||this.ch()==='-')){
+      const op=this.s[this.p++];
+      const r=this.parseTerm();
+      v = op==='+'? v+r : v-r;
+    }
+    return v;
+  }
+  parseTerm(){
+    let v = this.parseFactor();
+    while(this.p<this.s.length && (this.ch()==='*'||this.ch()==='/'||this.ch()==='%')){
+      const op=this.s[this.p++];
+      const r=this.parseFactor();
+      v = op==='*'? v*r : op==='/'? (r!==0?v/r:0) : v%r;
+    }
+    return v;
+  }
+  parseFactor(){
+    if(this.ch()==='('){ this.p++; const v=this.parseExpr(); if(this.ch()===')')this.p++; return v; }
+    if(this.ch()==='-'){ this.p++; return -this.parseFactor(); }
+    let n='';
+    while(this.p<this.s.length && /[0-9.]/.test(this.ch())) n+=this.s[this.p++];
+    if(n==='') throw new Error('Invalid Number');
+    return parseFloat(n);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §3  ScriptTokenizer
+   ═══════════════════════════════════════════════════ */
+class ScriptTokenizer {
+  constructor(src){ this.src=src; this.pos=0; this.line=1; this.col=1; this.tokens=[]; }
+  tokenize(){
+    const KW = new Set(['var','function','if','else','repeat','while','timer',
+      'goto','camera','group','onClick','onMouseMove','after','print','effect']);
+    const S = this.src;
+    while(this.pos < S.length){
+      const c = S[this.pos];
+      if(c==='\n'){ this.line++; this.col=1; this.pos++; continue; }
+      if(/\s/.test(c)){ this.col++; this.pos++; continue; }
+      if(c==='/'&&S[this.pos+1]==='/'){ while(this.pos<S.length&&S[this.pos]!=='\n') this.pos++; continue; }
+      if('{}()=><+-*/!&|.,;'.includes(c)){
+        this.tokens.push({t:'S',v:c,l:this.line,c:this.col}); this.pos++; this.col++; continue;
+      }
+      if(/[0-9]/.test(c)){
+        let n=''; const sl=this.line,sc=this.col;
+        while(this.pos<S.length&&/[0-9.]/.test(S[this.pos])){ n+=S[this.pos++]; this.col++; }
+        this.tokens.push({t:'N',v:parseFloat(n),l:sl,c:sc}); continue;
+      }
+      if(c==='"'||c==="'"){
+        const q=c; let s=''; this.pos++; this.col++;
+        const sl=this.line,sc=this.col;
+        while(this.pos<S.length&&S[this.pos]!==q){ s+=S[this.pos++]; this.col++; }
+        if(this.pos<S.length) { this.pos++; this.col++; } // skip closing quote
+        this.tokens.push({t:'STR',v:s,l:sl,c:sc}); continue;
+      }
+      if(/[a-zA-Z_]/.test(c)){
+        let w=''; const sl=this.line,sc=this.col;
+        while(this.pos<S.length&&/[a-zA-Z0-9_.]/.test(S[this.pos])){ w+=S[this.pos++]; this.col++; }
+        this.tokens.push({t:KW.has(w)?'K':'ID',v:w,l:sl,c:sc}); continue;
+      }
+      this.pos++; this.col++;
+    }
+    return this.tokens;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §4  ScriptParser (AST Generator)
+   ═══════════════════════════════════════════════════ */
+class ScriptParser {
+  constructor(tokens,con){ this.tk=tokens; this.p=0; this.con=con; }
+  pk(){ return this.tk[this.p]; }
+  nx(){ return this.tk[this.p++]; }
+  expect(t,v){
+    const c=this.pk();
+    if(!c) throw {msg:`Unexpected end, expected ${v||t}`,l:0,c:0};
+    if(t&&c.t!==t) throw {msg:`Expected ${t} got "${c.v}"`,l:c.l,c:c.c};
+    if(v&&c.v!==v) throw {msg:`Expected "${v}" got "${c.v}"`,l:c.l,c:c.c};
+    return this.nx();
+  }
+  parse(){
+    const body=[];
+    while(this.p<this.tk.length){ const s=this.stmt(); if(s) body.push(s); }
+    return {type:'Program',body};
+  }
+  stmt(){
+    const t=this.pk(); if(!t) return null;
+    if(t.t==='K'){
+      switch(t.v){
+        case 'var':     return this.pVar();
+        case 'function':return this.pFunc();
+        case 'if':      return this.pIf();
+        case 'repeat':  return this.pRepeat();
+        case 'while':   return this.pWhile();
+        case 'timer':   return this.pTimer();
+        case 'goto':    return this.pGoto();
+        case 'print':   return this.pPrint();
+        case 'camera':  return this.pCamera();
+        case 'group':   return this.pGroup();
+        case 'effect':  return this.pEffect();
+        case 'onClick': case 'onMouseMove': case 'after': return this.pEvent();
+      }
+    }
+    if(t.t==='ID') return this.pAssignOrCall();
+    this.nx(); return null; // Skip unknown
+  }
+  pVar(){
+    this.expect('K','var');
+    const name=this.expect('ID').v;
+    this.expect('S','=');
+    const val=this.expr();
+    return {type:'Var',name,val};
+  }
+  pFunc(){
+    this.expect('K','function');
+    const name=this.expect('ID').v;
+    let params=[];
+    if(this.pk()?.v==='('){
+      this.nx();
+      while(this.pk()&&this.pk().v!==')'){
+        if(this.pk().v===','){this.nx();continue;}
+        params.push(this.expect('ID').v);
+      }
+      this.expect('S',')');
+    }
+    const body=this.block();
+    return {type:'Func',name,params,body};
+  }
+  pIf(){
+    this.expect('K','if');
+    const cond=this.expr();
+    const then=this.block();
+    let els=null;
+    if(this.pk()?.v==='else'){ this.nx(); els=this.block(); }
+    return {type:'If',cond,then,els};
+  }
+  pRepeat(){
+    this.expect('K','repeat');
+    const count=this.expr();
+    const body=this.block();
+    return {type:'Repeat',count,body};
+  }
+  pWhile(){
+    this.expect('K','while');
+    const cond=this.expr();
+    const body=this.block();
+    return {type:'While',cond,body};
+  }
+  pTimer(){
+    this.expect('K','timer');
+    const ms=this.expr();
+    const body=this.block();
+    return {type:'Timer',ms,body};
+  }
+  pGoto(){
+    this.expect('K','goto');
+    this.expect('S','(');
+    const page=this.expr();
+    this.expect('S',')');
+    return {type:'Goto',page};
+  }
+  pPrint(){
+    this.expect('K','print');
+    this.expect('S','(');
+    const val=this.expr();
+    this.expect('S',')');
+    return {type:'Print',val};
+  }
+  pCamera(){
+    this.expect('K','camera');
+    this.expect('S','.');
+    const method=this.expect('ID').v;
+    this.expect('S','(');
+    const args=[];
+    while(this.pk()&&this.pk().v!==')'){
+      if(this.pk().v===','){this.nx();continue;}
+      args.push(this.expr());
+    }
+    if(this.pk()?.v===')') this.nx();
+    return {type:'Camera',method,args};
+  }
+  pGroup(){
+    this.expect('K','group');
+    const name=this.expect('ID').v;
+    const body=this.block();
+    return {type:'Group',name,body};
+  }
+  pEffect(){
+    this.expect('K','effect');
+    const name=this.expect('ID').v;
+    return {type:'EffectCall',name};
+  }
+  pEvent(){
+    const ev=this.nx().v;
+    const body=this.block();
+    return {type:'Event',event:ev,body};
+  }
+  pAssignOrCall(){
+    const name=this.expect('ID').v;
+    if(this.pk()?.v==='='){
+      this.nx();
+      return {type:'Assign',name,val:this.expr()};
+    }
+    if(this.pk()?.v==='('){
+      this.nx();
+      const args=[];
+      while(this.pk()&&this.pk().v!==')'){
+        if(this.pk().v===','){this.nx();continue;}
+        args.push(this.expr());
+      }
+      if(this.pk()?.v===')') this.nx();
+      return {type:'Call',name,args};
+    }
+    return {type:'ExprStmt',expr:{type:'VarRef',name}};
+  }
+  block(){
+    if(this.pk()?.v!=='{') return []; // Handle missing block gracefully
+    this.nx();
+    const stmts=[];
+    while(this.pk()&&this.pk().v!=='}') { const s=this.stmt(); if(s) stmts.push(s); }
+    if(this.pk()?.v==='}') this.nx();
+    return stmts;
+  }
+  /* Expression Parser */
+  expr(){ return this.or(); }
+  or(){
+    let l=this.and();
+    while(this.pk()?.v==='|'){ this.nx(); l={type:'Bin',op:'||',l,r:this.and()}; }
+    return l;
+  }
+  and(){
+    let l=this.cmp();
+    while(this.pk()?.v==='&'){ this.nx(); l={type:'Bin',op:'&&',l,r:this.cmp()}; }
+    return l;
+  }
+  cmp(){
+    let l=this.add();
+    while(this.pk()&&['>','<'].includes(this.pk().v)){
+      const op=this.nx().v;
+      let op2=op;
+      if(this.pk()?.v==='='){ op2+=this.nx().v; }
+      l={type:'Bin',op:op2,l,r:this.add()};
+    }
+    while(this.pk()?.v==='='&&this.tk[this.p+1]?.v==='='){
+      this.nx();this.nx();
+      l={type:'Bin',op:'==',l,r:this.add()};
+    }
+    return l;
+  }
+  add(){
+    let l=this.mul();
+    while(this.pk()&&['+','-'].includes(this.pk().v)){
+      const op=this.nx().v;
+      l={type:'Bin',op,l,r:this.mul()};
+    }
+    return l;
+  }
+  mul(){
+    let l=this.unary();
+    while(this.pk()&&['*','/','%'].includes(this.pk().v)){
+      const op=this.nx().v;
+      l={type:'Bin',op,l,r:this.unary()};
+    }
+    return l;
+  }
+  unary(){
+    if(this.pk()?.v==='-'){ this.nx(); return {type:'Neg',v:this.unary()}; }
+    if(this.pk()?.v==='!'){ this.nx(); return {type:'Not',v:this.unary()}; }
+    return this.atom();
+  }
+  atom(){
+    const t=this.pk();
+    if(!t) throw {msg:'Unexpected end in expression',l:0,c:0};
+    if(t.t==='N'){ this.nx(); return {type:'Num',v:t.v}; }
+    if(t.t==='STR'){ this.nx(); return {type:'Str',v:t.v}; }
+    if(t.t==='ID'){ this.nx(); return {type:'VarRef',name:t.v}; }
+    if(t.v==='('){ this.nx(); const e=this.expr(); if(this.pk()?.v===')')this.nx(); return e; }
+    throw {msg:`Unexpected "${t.v}" in expression`,l:t.l,c:t.c};
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §5  ScriptInterpreter (Secure Execution)
+   ═══════════════════════════════════════════════════ */
+class ScriptInterpreter {
+  constructor(runtime){
+    this.rt = runtime;
+    this.scope = Object.create(null);
+    this.fns = Object.create(null);
+  }
+  run(ast){
+    if(!ast) return;
+    for(const s of ast.body) this.exec(s);
+  }
+  exec(n){
+    if(!n) return;
+    switch(n.type){
+      case 'Var':    this.scope[n.name]=this.ev(n.val); break;
+      case 'Assign': this.scope[n.name]=this.ev(n.val); break;
+      case 'Func':   this.fns[n.name]=n; break;
+      case 'Print':  this.rt.con.info('» '+String(this.ev(n.val))); break;
+      case 'If':
+        if(this.truthy(this.ev(n.cond))) this.execBlock(n.then);
+        else if(n.els) this.execBlock(n.els);
+        break;
+      case 'Repeat':{
+        const c=Math.floor(this.ev(n.count));
+        for(let i=0;i<c;i++) this.execBlock(n.body);
+        break;
+      }
+      case 'While':{
+        let guard=0;
+        while(this.truthy(this.ev(n.cond))&&guard++<10000) this.execBlock(n.body);
+        break;
+      }
+      case 'Timer':{
+        const ms=this.ev(n.ms);
+        this.rt.timers.add(()=>this.execBlock(n.body),ms);
+        break;
+      }
+      case 'Goto':   this.rt.gotoPage(String(this.ev(n.page))); break;
+      case 'Camera':{
+        const args=n.args.map(a=>this.ev(a));
+        const cam=this.rt.camera;
+        if(cam[n.method]) cam[n.method](...args);
+        break;
+      }
+      case 'Call':{
+        const fn=this.fns[n.name];
+        if(fn){
+          const saved={...this.scope};
+          (fn.params||[]).forEach((p,i)=>this.scope[p]=this.ev(n.args[i]));
+          this.execBlock(fn.body);
+          this.scope=saved;
+        } else {
+          this.rt.con.warn(`Unknown function: ${n.name}`);
+        }
+        break;
+      }
+      case 'Event':  this.rt.registerEvent(n.event,()=>this.execBlock(n.body)); break;
+      case 'Group':  this.execBlock(n.body); break;
+      case 'EffectCall': this.rt.con.debug(`Effect triggered: ${n.name}`); break;
+      case 'ExprStmt': this.ev(n.expr); break;
+    }
+  }
+  execBlock(stmts){ for(const s of stmts) this.exec(s); }
+  truthy(v){ return !!v; }
+  ev(n){
+    if(!n) return 0;
+    switch(n.type){
+      case 'Num': return n.v;
+      case 'Str': return n.v;
+      case 'VarRef': return this.scope[n.name] !== undefined ? this.scope[n.name] : 0;
+      case 'Neg': return -this.ev(n.v);
+      case 'Not': return !this.ev(n.v);
+      case 'Bin':{
+        const l=this.ev(n.l), r=this.ev(n.r);
+        switch(n.op){
+          case '+': return l+r; case '-': return l-r;
+          case '*': return l*r; case '/': return r!==0?l/r:0; case '%': return l%r;
+          case '>': return l>r;  case '<': return l<r;
+          case '>=':return l>=r; case '<=':return l<=r;
+          case '==':return l==r; case '!=':return l!=r;
+          case '&&':return l&&r; case '||':return l||r;
+        }
+        return 0;
+      }
+    }
+    return 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §6  EffectManager (Plugin Architecture)
+   ═══════════════════════════════════════════════════ */
+class EffectManager {
+  constructor(){ this.registry={}; this.active=[]; }
+  register(def){ this.registry[def.name]=def; }
+  start(name,el,opts={}){
+    const def=this.registry[name];
+    if(!def) return false;
+    const inst={def,el,opts,t0:performance.now(),alive:true};
+    if(def.start) def.start(el,opts);
+    this.active.push(inst);
+    return true;
+  }
+  update(now){
+    for(let i=this.active.length-1;i>=0;i--){
+      const a=this.active[i];
+      if(!a.alive){ this.active.splice(i,1); continue; }
+      if(a.def.update) a.def.update(a.el,now-a.t0,a.opts);
+    }
+  }
+  stopAll(){
+    this.active.forEach(a=>{ if(a.def.stop) a.def.stop(a.el); });
+    this.active=[];
+  }
+}
+
+/* Built-in Effects Registration */
+function registerBuiltinEffects(fx){
+  const css=(el,o)=>Object.assign(el.style,o);
+
+  fx.register({name:'Fire',
+    start(el){ el._fire=true; },
+    update(el,t){
+      const h=Math.sin(t/80)*10;
+      css(el,{color:`hsl(${20+h},100%,55%)`,textShadow:`0 0 ${8+Math.sin(t/60)*6}px #f40,0 0 20px #a00`});
+    },
+    stop(el){ css(el,{color:'',textShadow:''}); }
+  });
+
+  fx.register({name:'Steam',
+    update(el,t){
+      const y=Math.sin(t/400)*4;
+      css(el,{transform:`translateY(${y}px)`,opacity:0.6+Math.sin(t/300)*0.3,filter:'blur(0.5px)'});
+    },
+    stop(el){ css(el,{transform:'',opacity:'',filter:''}); }
+  });
+
+  fx.register({name:'Smoke',
+    update(el,t){
+      css(el,{opacity:0.4+Math.sin(t/500)*0.3,filter:`blur(${1+Math.sin(t/400)}px)`,transform:`translateY(${-t/200}px)`});
+    },
+    stop(el){ css(el,{opacity:'',filter:'',transform:''}); }
+  });
+
+  fx.register({name:'Dance',
+    update(el,t){
+      const r=Math.sin(t/150)*8, y=Math.abs(Math.sin(t/200))*-10;
+      css(el,{transform:`rotate(${r}deg) translateY(${y}px)`});
+    },
+    stop(el){ css(el,{transform:''}); }
+  });
+
+  fx.register({name:'Wave',
+    update(el,t){
+      css(el,{transform:`translateY(${Math.sin(t/200)*8}px)`});
+    },
+    stop(el){ css(el,{transform:''}); }
+  });
+
+  fx.register({name:'Shake',
+    update(el,t){
+      const x=(Math.random()-0.5)*8, y=(Math.random()-0.5)*4;
+      css(el,{transform:`translate(${x}px,${y}px)`});
+    },
+    stop(el){ css(el,{transform:''}); }
+  });
+
+  fx.register({name:'Rotate',
+    update(el,t){ css(el,{transform:`rotate(${t/5}deg)`}); },
+    stop(el){ css(el,{transform:''}); }
+  });
+
+  fx.register({name:'Bounce',
+    update(el,t){
+      const y=-Math.abs(Math.sin(t/300))*20;
+      css(el,{transform:`translateY(${y}px)`});
+    },
+    stop(el){ css(el,{transform:''}); }
+  });
+
+  fx.register({name:'Glow',
+    update(el,t){
+      const s=6+Math.sin(t/300)*6;
+      css(el,{textShadow:`0 0 ${s}px currentColor,0 0 ${s*2}px currentColor`});
+    },
+    stop(el){ css(el,{textShadow:''}); }
+  });
+
+  fx.register({name:'Rainbow',
+    update(el,t){ css(el,{color:`hsl(${(t/5)%360},90%,60%)`}); },
+    stop(el){ css(el,{color:''}); }
+  });
+
+  fx.register({name:'Explosion',
+    start(el){ el._ex0=performance.now(); },
+    update(el,t){
+      if(t>800){ css(el,{opacity:'1',transform:'',filter:''}); return; }
+      const p=t/800;
+      css(el,{transform:`scale(${1+p*2})`,opacity:String(1-p),filter:`blur(${p*4}px)`});
+    },
+    stop(el){ css(el,{opacity:'',transform:'',filter:''}); }
+  });
+
+  fx.register({name:'Typing',
+    start(el){ el._full=el.textContent; el._ti=0; el.textContent=''; },
+    update(el,t){
+      const full=el._full||'';
+      const idx=Math.floor(t/60);
+      if(idx<=full.length) el.textContent=full.slice(0,idx);
+    },
+    stop(el){ if(el._full) el.textContent=el._full; }
+  });
+
+  fx.register({name:'Fade',
+    update(el,t){ css(el,{opacity:String(0.3+Math.sin(t/600)*0.7)}); },
+    stop(el){ css(el,{opacity:''}); }
+  });
+
+  fx.register({name:'Blur',
+    update(el,t){ css(el,{filter:`blur(${1+Math.sin(t/400)*2}px)`}); },
+    stop(el){ css(el,{filter:''}); }
+  });
+
+  fx.register({name:'Particle',
+    start(el){
+      el._parts=[];
+      for(let i=0;i<12;i++){
+        const p=document.createElement('span');
+        p.textContent='•';
+        p.style.cssText='position:absolute;pointer-events:none;font-size:8px;color:#ff0;left:50%;top:50%;';
+        el.style.position='relative';
+        el.appendChild(p);
+        el._parts.push({el:p,a:Math.random()*Math.PI*2,sp:0.5+Math.random()*1.5,r:0});
+      }
+    },
+    update(el,t){
+      (el._parts||[]).forEach(p=>{
+        p.r+=p.sp;
+        const x=Math.cos(p.a)*p.r, y=Math.sin(p.a)*p.r;
+        p.el.style.transform=`translate(${x}px,${y}px)`;
+        p.el.style.opacity=String(Math.max(0,1-p.r/60));
+      });
+    },
+    stop(el){ 
+      (el._parts||[]).forEach(p=>p.el.remove()); 
+      el._parts=[];
+    }
+  });
+
+  fx.register({name:'Float',
+    update(el,t){
+      css(el,{transform:`translateY(${Math.sin(t/700)*12}px) rotate(${Math.sin(t/900)*3}deg)`});
+    },
+    stop(el){ css(el,{transform:''}); }
+  });
+
+  fx.register({name:'Pulse',
+    update(el,t){
+      const s=1+Math.sin(t/250)*0.15;
+      css(el,{transform:`scale(${s})`});
+    },
+    stop(el){ css(el,{transform:''}); }
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   §7  CameraManager
+   ═══════════════════════════════════════════════════ */
+class CameraManager {
+  constructor(el){ this.el=el; this.reset(); }
+  reset(){ this.x=0;this.y=0;this.z=1;this.r=0; this.apply(); }
+  apply(){ this.el.style.transform=`translate(${this.x}px,${this.y}px) scale(${this.z}) rotate(${this.r}deg)`; }
+  zoom(v){ this.z=v; this.apply(); }
+  move(x,y){ this.x=x; this.y=y; this.apply(); }
+  rotate(d){ this.r=d; this.apply(); }
+  shake(intensity=5){
+    let n=0;
+    const iv=setInterval(()=>{
+      this.el.style.transform=`translate(${(Math.random()-.5)*intensity}px,${(Math.random()-.5)*intensity}px) scale(${this.z}) rotate(${this.r}deg)`;
+      if(++n>20){ clearInterval(iv); this.apply(); }
+    },40);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §8  TimerManager
+   ═══════════════════════════════════════════════════ */
+class TimerManager {
+  constructor(){ this.list=[]; }
+  add(fn,ms,repeat=false){
+    const id=repeat?setInterval(fn,ms):setTimeout(fn,ms);
+    this.list.push({id,repeat});
+    return id;
+  }
+  clearAll(){
+    this.list.forEach(t=>t.repeat?clearInterval(t.id):clearTimeout(t.id));
+    this.list=[];
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §9  DocTokenizer
+   ═══════════════════════════════════════════════════ */
+class DocTokenizer {
+  constructor(src){ this.s=src; this.p=0; this.ln=1; this.cl=1; this.tk=[]; }
+  tokenize(){
+    const S=this.s;
+    while(this.p<S.length){
+      const c=S[this.p];
+      if(c==='\n'){ this.ln++; this.cl=1; this.p++; continue; }
+      if(/[ \t\r]/.test(c)){ this.cl++; this.p++; continue; }
+
+      if(c==='('&&S[this.p+1]==='['){ this.readCode(); continue; }
+      if(c==='('){ this.readSized(); continue; }
+      if(c==='<'){ this.readQuote(); continue; }
+      if(c==='['&&S[this.p+1]==='('){ this.readCalc(); continue; }
+      if(c==='*'&&S[this.p+1]==='['){ this.readEffect(); continue; }
+      if(c==='@'&&S.substr(this.p,5)==='@API@'){ this.readAPI(); continue; }
+      if(S.substr(this.p,4)==='Page'&&(S[this.p+4]===' '||S[this.p+4]==='\n')){ this.readPage(); continue; }
+      if(S.substr(this.p,9)==='animation'){ this.readAnimDef(); continue; }
+
+      this.readPlain();
+    }
+    return this.tk;
+  }
+
+  readSized(){
+    const sl=this.ln,sc=this.cl;
+    this.p++;this.cl++;
+    let txt='';
+    while(this.p<this.s.length&&this.s[this.p]!==')'){txt+=this.s[this.p++];this.cl++;}
+    if(this.p<this.s.length) { this.p++;this.cl++; } // skip )
+    if(this.s[this.p]==='['){
+      this.p++;this.cl++;
+      let sz='';
+      while(this.p<this.s.length&&this.s[this.p]!==']'){sz+=this.s[this.p++];this.cl++;}
+      if(this.p<this.s.length) { this.p++;this.cl++; } // skip ]
+      this.tk.push({type:'SIZED',text:txt,size:parseFloat(sz)||16,l:sl,c:sc});
+    } else {
+      this.tk.push({type:'TEXT',value:'('+txt+')',l:sl,c:sc});
+    }
+  }
+
+  readQuote(){
+    const sl=this.ln,sc=this.cl;
+    this.p++;this.cl++;
+    let v='';
+    while(this.p<this.s.length&&this.s[this.p]!=='>'){v+=this.s[this.p++];this.cl++;}
+    if(this.p<this.s.length) { this.p++;this.cl++; } // skip >
+    this.tk.push({type:'QUOTE',value:v.trim(),l:sl,c:sc});
+  }
+
+  readCalc(){
+    const sl=this.ln,sc=this.cl;
+    this.p+=2;this.cl+=2;
+    let expr='';
+    while(this.p<this.s.length){
+      if(this.s[this.p]===')'&&this.s[this.p+1]===']'){this.p+=2;this.cl+=2;break;}
+      expr+=this.s[this.p++];this.cl++;
+    }
+    this.tk.push({type:'CALC',expr,l:sl,c:sc});
+  }
+
+  readEffect(){
+    const sl=this.ln,sc=this.cl;
+    this.p+=2;this.cl+=2; // skip *[
+    let raw='';
+    while(this.p<this.s.length&&this.s[this.p]!==']'){raw+=this.s[this.p++];this.cl++;}
+    if(this.p<this.s.length) { this.p++;this.cl++; } // skip ]
+    const parts=raw.split(',').map(s=>s.trim());
+    this.tk.push({type:'EFFECT',text:parts[0]||'',effect:parts[1]||'',opts:parts.slice(2),l:sl,c:sc});
+  }
+
+  readCode(){
+    const sl=this.ln,sc=this.cl;
+    this.p+=2;this.cl+=2;
+    let code='';
+    while(this.p<this.s.length){
+      if(this.s[this.p]===']'&&this.s[this.p+1]===')'){this.p+=2;this.cl+=2;break;}
+      if(this.s[this.p]==='\n'){this.ln++;this.cl=1;}else{this.cl++;}
+      code+=this.s[this.p++];
+    }
+    this.tk.push({type:'CODE',code,l:sl,c:sc});
+  }
+
+  readAPI(){
+    const sl=this.ln,sc=this.cl;
+    this.p+=5;this.cl+=5;
+    let body='';
+    while(this.p<this.s.length){
+      if(this.s[this.p]==='@'&&this.s[this.p-1]!=='\\'){this.p++;this.cl++;break;}
+      body+=this.s[this.p++];this.cl++;
+    }
+    this.tk.push({type:'API',body:body.trim(),l:sl,c:sc});
+  }
+
+  readPage(){
+    const sl=this.ln,sc=this.cl;
+    this.p+=4;this.cl+=4;
+    let name='';
+    while(this.p<this.s.length&&this.s[this.p]!=='\n'){name+=this.s[this.p++];this.cl++;}
+    this.tk.push({type:'PAGE',name:name.trim(),l:sl,c:sc});
+  }
+
+  readAnimDef(){
+    const sl=this.ln,sc=this.cl;
+    this.p+=9;this.cl+=9;
+    while(this.p<this.s.length&&/\s/.test(this.s[this.p])){this.p++;this.cl++;}
+    let name='';
+    while(this.p<this.s.length&&this.s[this.p]!=='{'){name+=this.s[this.p++];this.cl++;}
+    if(this.p<this.s.length) { this.p++;this.cl++; } // skip {
+    let body='',depth=1;
+    while(this.p<this.s.length&&depth>0){
+      if(this.s[this.p]==='{')depth++;
+      if(this.s[this.p]==='}')depth--;
+      if(depth>0)body+=this.s[this.p];
+      this.p++;this.cl++;
+    }
+    this.tk.push({type:'ANIMDEF',name:name.trim(),body,l:sl,c:sc});
+  }
+
+  readPlain(){
+    const sl=this.ln,sc=this.cl;
+    let v='';
+    while(this.p<this.s.length){
+      const c=this.s[this.p];
+      if(c==='\n')break;
+      if(['(','<','[','*','@'].includes(c))break;
+      if(this.s.substr(this.p,4)==='Page'&&this.s[this.p+4]===' ')break;
+      if(this.s.substr(this.p,9)==='animation')break;
+      v+=c;this.p++;this.cl++;
+    }
+    if(v.trim()) this.tk.push({type:'TEXT',value:v,l:sl,c:sc});
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §10  DocParser
+   ═══════════════════════════════════════════════════ */
+class DocParser {
+  constructor(tokens,con){ this.tk=tokens; this.con=con; }
+  parse(){
+    const ast={type:'Doc',pages:[],anims:{}};
+    let cur=null;
+    for(const t of this.tk){
+      if(t.type==='ANIMDEF'){ ast.anims[t.name]=t.body; continue; }
+      if(t.type==='PAGE'){
+        if(cur) ast.pages.push(cur);
+        cur={name:t.name,nodes:[]};
+        continue;
+      }
+      if(!cur){ cur={name:'Default',nodes:[]}; }
+      cur.nodes.push(t);
+    }
+    if(cur) ast.pages.push(cur);
+    return ast;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §11  Renderer
+   ═══════════════════════════════════════════════════ */
+class Renderer {
+  constructor(container,rt){
+    this.el=container;
+    this.rt=rt;
+  }
+
+  renderPage(page){
+    this.el.innerHTML='';
+    const wrap=document.createElement('div');
+    wrap.className='ljm-page';
+    for(const n of page.nodes) this.node(n,wrap);
+    this.el.appendChild(wrap);
+  }
+
+  node(n,parent){
+    switch(n.type){
+      case 'TEXT':{
+        const d=document.createElement('div');
+        d.className='ljm-el';
+        d.textContent=n.value;
+        parent.appendChild(d);
+        break;
+      }
+      case 'SIZED':{
+        const s=document.createElement('div');
+        s.className='ljm-el';
+        s.textContent=n.text;
+        s.style.fontSize=n.size+'px';
+        parent.appendChild(s);
+        break;
+      }
+      case 'QUOTE':{
+        const q=document.createElement('div');
+        q.className='ljm-el ljm-quote';
+        q.textContent=n.value;
+        parent.appendChild(q);
+        break;
+      }
+      case 'CALC':{
+        const d=document.createElement('span');
+        d.className='ljm-el';
+        try{ d.textContent=String(MathParser.eval(n.expr)); }
+        catch(e){ d.textContent='[Math Error]'; this.rt.con.error('Math: '+e.message,n.l,n.c); }
+        parent.appendChild(d);
+        break;
+      }
+      case 'EFFECT':{
+        const s=document.createElement('span');
+        s.className='ljm-el';
+        s.textContent=n.text;
+        parent.appendChild(s);
+        if(!this.rt.fx.start(n.effect,s,{opts:n.opts})){
+          this.rt.con.warn(`Unknown effect: ${n.effect}`,n.l,n.c);
+        }
+        break;
+      }
+      case 'CODE':{
+        const d=document.createElement('div');
+        d.className='ljm-el ljm-code';
+        d.textContent='⚙ Executing script…';
+        parent.appendChild(d);
+        try{
+          const st=new ScriptTokenizer(n.code);
+          const sp=new ScriptParser(st.tokenize(),this.rt.con);
+          const ast=sp.parse();
+          const interp=new ScriptInterpreter(this.rt);
+          interp.run(ast);
+          d.textContent='⚙ Script executed ✓';
+        }catch(e){
+          d.textContent='⚙ Script Error: '+(e.msg||e.message);
+          this.rt.con.error('Script: '+(e.msg||e.message),e.l,e.c);
+        }
+        break;
+      }
+      case 'API':{
+        const d=document.createElement('div');
+        d.className='ljm-el ljm-api';
+        d.textContent='⏳ API calling…';
+        parent.appendChild(d);
+        this.callAPI(n,d);
+        break;
+      }
+    }
+  }
+
+  callAPI(n,el){
+    try{
+      const raw=n.body.replace(/(\w+)\s*:/g,'"$1":').replace(/'/g,'"');
+      const cfg=JSON.parse(raw);
+      fetch(cfg.url,{method:cfg.method||'GET'})
+        .then(r=>r.text())
+        .then(txt=>{
+          el.textContent='✓ API Response:\n'+txt.slice(0,500)+(txt.length>500?'…':'');
+          this.rt.con.info('API response received ('+txt.length+' bytes)');
+        })
+        .catch(e=>{
+          el.textContent='✕ API Error: '+e.message;
+          this.rt.con.error('API: '+e.message,n.l,n.c);
+        });
+    }catch(e){
+      el.textContent='✕ API Config Error';
+      this.rt.con.error('API parse: '+e.message,n.l,n.c);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §12  Runtime
+   ═══════════════════════════════════════════════════ */
+class Runtime {
+  constructor(app){
+    this.app=app;
+    this.con=app.console;
+    this.fx=app.fx;
+    this.camera=app.camera;
+    this.timers=app.timers;
+    this.renderer=app.renderer;
+    this.ast=null;
+    this.pageIdx=0;
+    this.raf=null;
+    this.events={};
+  }
+
+  run(){
+    this.stop();
+    const src=document.getElementById('editor').value;
+    if(!src.trim()){ this.con.warn('Empty source.'); return; }
+
+    this.con.info('Parsing LJM source…');
+
+    const dt=new DocTokenizer(src);
+    const tokens=dt.tokenize();
+
+    const dp=new DocParser(tokens,this.con);
+    this.ast=dp.parse();
+
+    if(!this.ast.pages.length){ this.con.warn('No pages found.'); return; }
+
+    this.pageIdx=0;
+    this.showPage(0);
+
+    const loop=(t)=>{ this.fx.update(t); this.raf=requestAnimationFrame(loop); };
+    this.raf=requestAnimationFrame(loop);
+
+    this.con.info(`Rendered ${this.ast.pages.length} page(s). Runtime active.`);
+  }
+
+  showPage(idx){
+    if(!this.ast||!this.ast.pages[idx])return;
+    this.pageIdx=idx;
+    this.events={};
+    this.renderer.renderPage(this.ast.pages[idx]);
+  }
+
+  gotoPage(name){
+    if(!this.ast)return;
+    const idx=this.ast.pages.findIndex(p=>p.name===name);
+    if(idx>=0){
+      this.showPage(idx);
+      this.con.info(`→ Page: ${name}`);
+    } else {
+      this.con.error(`Page not found: "${name}"`);
+    }
+  }
+
+  registerEvent(name,handler){
+    this.events[name]=handler;
+    const area=document.getElementById('renderArea');
+    if(name==='onClick') area.onclick=handler;
+    if(name==='onMouseMove') area.onmousemove=handler;
+    if(name==='after') this.timers.add(handler,1000);
+  }
+
+  stop(){
+    if(this.raf) cancelAnimationFrame(this.raf);
+    this.raf=null;
+    this.timers.clearAll();
+    this.fx.stopAll();
+    this.camera.reset();
+    
+    // Clean up event listeners
+    const area=document.getElementById('renderArea');
+    area.onclick=null;
+    area.onmousemove=null;
+    this.events={};
+    
+    this.con.info('Runtime stopped.');
+  }
+
+  clear(){
+    this.stop();
+    document.getElementById('renderArea').innerHTML='';
+    this.ast=null;
+    this.con.info('Cleared.');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §13  FileManager
+   ═══════════════════════════════════════════════════ */
+class FileManager {
+  constructor(app){
+    this.app=app;
+    this.input=document.getElementById('fi');
+    this.input.addEventListener('change',e=>{
+      const f=e.target.files[0]; if(!f)return;
+      const r=new FileReader();
+      r.onload=ev=>{
+        document.getElementById('editor').value=ev.target.result;
+        this.app.console.info('Loaded: '+f.name);
+      };
+      r.readAsText(f);
+      this.input.value='';
+    });
+  }
+  open(){ this.input.click(); }
+  save(){
+    const blob=new Blob([document.getElementById('editor').value],{type:'text/plain'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='document.ljm';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this.app.console.info('Saved: document.ljm');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   §14  APP Bootstrap
+   ═══════════════════════════════════════════════════ */
+const APP={};
+window.addEventListener('DOMContentLoaded',()=>{
+  APP.console=new ConsoleManager();
+  APP.fx=new EffectManager();
+  registerBuiltinEffects(APP.fx);
+  APP.camera=new CameraManager(document.getElementById('renderArea'));
+  APP.timers=new TimerManager();
+  APP.renderer=new Renderer(document.getElementById('renderArea'),null);
+  APP.runtime=new Runtime(APP);
+  APP.renderer.rt=APP.runtime;
+  APP.file=new FileManager(APP);
+
+  // Default Demo Source
+  document.getElementById('editor').value=
+`Page Home
+
+(Welcome to LJM v2.0)[42]
+
+<This is a quote block>
+
+Calculation: [(5)+(5)] = result
+
+*[Fire Text,Fire]
+*[Rainbow!,Rainbow]
+*[Shaking,Shake]
+*[Bouncing,Bounce]
+*[Glowing,Glow]
+*[Floating,Float]
+*[Pulsing,Pulse]
+
+([
+var hp = 100
+print("HP is " + hp)
+
+if hp > 50 {
+  print("Status: ALIVE")
+}
+
+repeat 3 {
+  print("Loop iteration")
+}
+
+function greet {
+  print("Hello from LJM function!")
+}
+
+greet()
+
+timer 2000 {
+  print("Timer fired after 2s")
+}
+])
+
+Page Second
+
+(Second Page)[36]
+
+<You navigated here!>
+
+*[Welcome back,Rainbow]
+`;
+
+  APP.console.info('LJM Viewer v2.0 ready. Press Render.');
+});
+</script>
+</body>
+</html>
