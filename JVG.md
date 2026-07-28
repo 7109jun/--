@@ -609,7 +609,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 textarea{flex:1;background:transparent;border:0;outline:0;resize:none;color:var(--ink);
   font:inherit;padding:12px 14px;caret-color:var(--amber);white-space:pre;overflow:auto;tab-size:2}
 textarea::selection{background:rgba(79,216,235,.25)}
-.ef{display:flex;align-items:center;gap:12px;padding:7px 12px;flex:0 0 auto;
+.ef{display:flex;align-items:center;gap:10px;padding:7px 12px;flex:0 0 auto;flex-wrap:wrap;
   border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim)}
 .ef .hint{margin-left:auto;letter-spacing:.05em}
 .ef .hint b{color:var(--amber);font-weight:700}
@@ -715,6 +715,64 @@ textarea::selection{background:rgba(79,216,235,.25)}
   border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim);letter-spacing:.05em;flex-wrap:wrap}
 .foot b{color:var(--mut);font-weight:500}
 
+/* ---------- tracer modal ---------- */
+.trc-back{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:rgba(4,14,26,.74);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.trc-back.open{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}}
+.trc-panel{width:min(880px,94vw);height:min(560px,92vh);display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--panel),var(--panel2));
+  border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);
+  animation:popIn .3s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes popIn{from{opacity:0;transform:translateY(18px) scale(.96)}}
+.trc-body{flex:1;min-height:0;display:grid;grid-template-columns:1.25fr .9fr;gap:14px;padding:14px}
+.trc-left{display:flex;flex-direction:column;min-height:0;gap:10px}
+.trc-right{display:flex;flex-direction:column;min-height:0;overflow:auto;padding-right:2px}
+
+.dropzone{position:relative;flex:1;min-height:200px;border:1.5px dashed var(--line);border-radius:8px;overflow:hidden;
+  cursor:pointer;transition:.2s;background:
+  linear-gradient(rgba(79,216,235,.04) 1px,transparent 1px) 0 0/14px 14px,
+  linear-gradient(90deg,rgba(79,216,235,.04) 1px,transparent 1px) 0 0/14px 14px,#08203A}
+.dropzone:hover{border-color:rgba(79,216,235,.5)}
+.dropzone.over{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,180,84,.16), inset 0 0 40px rgba(255,180,84,.07)}
+.dropzone.has-img{border-style:solid;border-color:var(--line)}
+.dz-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  color:var(--dim);transition:.25s;text-align:center;padding:10px}
+.dz-inner p{margin:0;font:500 12px var(--mono);color:var(--mut)}
+.dz-ico{font-size:36px;color:var(--cyan);animation:dzfloat 2.6s ease-in-out infinite;line-height:1}
+@keyframes dzfloat{0%,100%{transform:translateY(-4px)}50%{transform:translateY(4px)}}
+.dz-sub{font:400 9.5px var(--mono)}
+.dropzone.has-img .dz-inner{opacity:0;pointer-events:none}
+#trcCv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none}
+.dropzone.has-img #trcCv{display:block}
+
+.trc-stats{display:flex;flex:0 0 auto;border:1px solid var(--line-soft);border-radius:6px;overflow:hidden}
+.trc-stats span{flex:1;padding:6px 4px;text-align:center;font:600 7.5px var(--disp);letter-spacing:.12em;color:var(--dim);
+  border-right:1px solid var(--line-soft);background:rgba(7,24,41,.4)}
+.trc-stats span:last-child{border-right:0}
+.trc-stats b{display:block;font:700 13px/1.2 var(--disp);color:var(--cyan)}
+.trc-stats span:nth-child(even) b{color:var(--amber)}
+
+.ctl{display:block;font:500 10.5px var(--mono);color:var(--mut);margin-bottom:13px}
+.ctl b{color:var(--cyan);float:right;font-weight:700}
+.ctl input[type=range]{width:100%;margin-top:7px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+  background:var(--line);outline:none;cursor:pointer}
+.ctl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--amber);border:2px solid #241305;box-shadow:0 0 8px rgba(255,180,84,.5);transition:transform .15s}
+.ctl input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25)}
+.ctl input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--amber);
+  border:2px solid #241305;box-shadow:0 0 8px rgba(255,180,84,.5)}
+
+.ctl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:600 10px var(--disp);letter-spacing:.1em;padding:6px 13px;background:transparent;color:var(--mut);
+  border:0;cursor:pointer;transition:.18s}
+.seg button.on{background:var(--cyan);color:#062036}
+.seg button:not(.on):hover{color:var(--ink)}
+
+.trc-foot{margin-top:auto;display:flex;justify-content:flex-end;gap:8px;padding-top:12px}
+
 @media(max-width:1020px){
   .app{height:auto;min-height:100vh}
   .main{grid-template-columns:1fr}
@@ -725,6 +783,9 @@ textarea::selection{background:rgba(79,216,235,.25)}
   .stat:nth-child(3){border-right:0}
   .stages{margin-left:0}
   .ph{flex-wrap:wrap;height:auto;padding:8px 12px;row-gap:6px}
+  .trc-body{grid-template-columns:1fr;overflow:auto}
+  .trc-panel{height:auto;max-height:94vh}
+  .dropzone{min-height:240px}
 }
 </style>
 </head>
@@ -749,7 +810,7 @@ textarea::selection{background:rgba(79,216,235,.25)}
       <span class="badge hot">SPEC v1.0</span>
       <span class="badge">LINE-ONLY</span>
       <span class="badge">COMPILE-TIME FILL</span>
-      <span class="badge">.jvg</span>
+      <span class="badge">IMG TRACE</span>
       <div class="status"><span class="led" id="led"></span><span id="statusTxt">READY</span></div>
     </div>
   </header>
@@ -778,7 +839,8 @@ textarea::selection{background:rgba(79,216,235,.25)}
       <div class="ef">
         <span id="metaPos">Ln 1, Col 1</span>
         <span id="metaSize">0 B</span>
-        <label class="tgl" style="margin-left:6px"><input type="checkbox" id="auto" checked><i></i>AUTO</label>
+        <label class="tgl" style="margin-left:4px"><input type="checkbox" id="auto" checked><i></i>AUTO</label>
+        <button class="btn btn-g btn-s" id="traceBtn">🖼 TRACE</button>
         <button class="btn btn-g btn-s" id="dljvg">⬇ .jvg</button>
         <span class="hint"><b>⌃⏎</b> 컴파일</span>
       </div>
@@ -841,15 +903,72 @@ textarea::selection{background:rgba(79,216,235,.25)}
 
   <footer class="foot">
     <span><b>JVG v1.0</b> — Jun Vector Graphics · 모든 그림은 선(Line)으로 표현한다</span>
-    <span>compiler <b>v1.0.2</b> · 기본값 <b>Color FFFFFF · Weight 1</b> · 열린 Fill()은 무시(선분 유지)</span>
+    <span>compiler <b>v1.0.4</b> · 트레이서 픽셀 파이프라인 수정 · 대량 op 안전장치</span>
   </footer>
+</div>
+
+<!-- ===== TRACER MODAL ===== -->
+<div class="trc-back" id="trcBack">
+  <div class="trc-panel">
+    <div class="ph">
+      <span class="dot" style="background:var(--yellow);box-shadow:0 0 8px rgba(255,210,63,.6)"></span>
+      <h2>TRACE</h2><span class="sub">PNG · JPEG → JVG (Sobel → 폴리라인 추적 → RDP)</span>
+      <div class="right"><button class="btn btn-g btn-s" id="trcClose">✕ 닫기</button></div>
+    </div>
+    <div class="trc-body">
+      <div class="trc-left">
+        <div class="dropzone" id="dropzone">
+          <div class="dz-inner">
+            <span class="dz-ico">▦</span>
+            <p>이미지를 여기에 놓거나 클릭</p>
+            <span class="dz-sub">PNG · JPEG · 붙여넣기(Ctrl+V) 지원</span>
+          </div>
+          <canvas id="trcCv"></canvas>
+          <input type="file" id="trcFile" accept="image/*" hidden>
+        </div>
+        <div class="trc-stats">
+          <span><b id="tsPx">–</b>EDGE PX</span>
+          <span><b id="tsStroke">–</b>STROKES</span>
+          <span><b id="tsCmd">–</b>LINE CMD</span>
+          <span><b id="tsByte">–</b>BYTES</span>
+          <span><b id="tsMs">–</b>TRACE MS</span>
+        </div>
+      </div>
+      <div class="trc-right">
+        <label class="ctl">해상도 (긴 변) <b id="vDetail">180</b>px
+          <input type="range" id="cDetail" min="80" max="320" step="10" value="180">
+        </label>
+        <label class="ctl">엣지 임계값 <b id="vThresh">64</b>
+          <input type="range" id="cThresh" min="8" max="200" step="2" value="64">
+        </label>
+        <label class="ctl">최소 선 길이 <b id="vMin">4</b>px
+          <input type="range" id="cMin" min="2" max="24" step="1" value="4">
+        </label>
+        <label class="ctl">단순화 강도 (RDP) <b id="vSimp">1.2</b>
+          <input type="range" id="cSimp" min="0" max="3" step="0.2" value="1.2">
+        </label>
+        <div class="ctl-row">
+          <div class="seg" id="modeSeg">
+            <button data-m="mono" class="on">모노</button>
+            <button data-m="color">컬러</button>
+          </div>
+          <label class="tgl" id="skipWhiteWrap"><input type="checkbox" id="cSkipWhite" checked><i></i>흰 배경 제외</label>
+        </div>
+        <div class="trc-foot">
+          <button class="btn btn-g" id="trcCancel">취소</button>
+          <button class="btn btn-p" id="trcInsert">에디터에 삽입 ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 /* ============================================================
    JVG v1.0 Compiler — LEXER → PARSER → CODEGEN(B) → RENDER
-   v1.0.2 : 샘플 데이터 수정, 입력 레이스 가드, DFS 안전장치,
-            렌더 캐시 최적화, IR↔캔버스 하이라이트, .jvg/IR 내보내기
+   v1.0.4 : 트레이서 픽셀 판독 수정(getImageData는 transform 무시),
+            애니메이션 총 시간 진짜 상한, 단색/SVG 이미지 방어,
+            대량 출력 예산 상한 + IR 뷰 DOM 캡
    ============================================================ */
 'use strict';
 const $ = id => document.getElementById(id);
@@ -961,8 +1080,8 @@ function codegen(ast, log){
 
   const close = (a,b) => Math.abs(a[0]-b[0]) < 1e-6 && Math.abs(a[1]-b[1]) < 1e-6;
   const ir = [];
-  let color = 'FFFFFF', weight = 1;      // 스펙 기본값
-  let pending = [];                       // Fill 판정 대기 선분
+  let color = 'FFFFFF', weight = 1;
+  let pending = [];
   let loops = 0;
 
   for (const n of ast.slice(1)){
@@ -983,7 +1102,7 @@ function codegen(ast, log){
     }
     else if (n.cmd === 'Line'){
       const [x1,y1,x2,y2] = n.args;
-      ir.push({ op:'LINE', x1, y1, x2, y2, color, weight });   // 상태 bake
+      ir.push({ op:'LINE', x1, y1, x2, y2, color, weight });
       pending.push({ a:[x1,y1], b:[x2,y2] });
     }
     else if (n.cmd === 'Fill'){
@@ -993,7 +1112,6 @@ function codegen(ast, log){
         loops++;
         log('ok','FILL','닫힌 루프 감지 (line ' + n.line + ') : ' + lp.segs + '개 선분 → polygon(' + lp.pts.length + ') #' + color);
       }
-      // 무시 = 부작용 없음 → 열린 선분은 유지, 닫힌 루프만 소비
       const remain = pending.filter((_, i) => !res.usedMask[i]);
       if (res.loops.length === 0 && pending.length === 0)
         log('warn','WARN','Fill() (line ' + n.line + ') 무시 — 그려진 선분이 없습니다');
@@ -1008,7 +1126,7 @@ function codegen(ast, log){
   return { ir, loops };
 }
 
-/* 닫힌 루프 추출 — DFS 백트래킹 + [fix] 탐색 예산 상한 (변태 입력 방어) */
+/* 닫힌 루프 추출 — DFS 백트래킹 + 탐색 예산 상한 */
 function extractLoops(segs, close){
   const n = segs.length;
   const used = new Array(n).fill(false);
@@ -1030,7 +1148,7 @@ function extractLoops(segs, close){
           if (used[j] || !close(segs[j].a, cur)) continue;
           used[j] = true; path.push(j);
           dfs(segs[j].b);
-          if (!closed){ used[j] = false; path.pop(); }   // 백트래킹
+          if (!closed){ used[j] = false; path.pop(); }
         }
       };
       dfs(segs[s].b);
@@ -1046,7 +1164,7 @@ function extractLoops(segs, close){
           progress = true;
           break;
         }
-        for (const idx of path) used[idx] = false;   // 퇴화 루프(면적 0)
+        for (const idx of path) used[idx] = false;
       } else {
         for (const idx of path) used[idx] = false;
       }
@@ -1055,11 +1173,11 @@ function extractLoops(segs, close){
   return { loops, usedMask: used };
 }
 
-/* ---------- 4. RENDER (레이어 캐시: 완료 op은 한 번만 베이크) ---------- */
+/* ---------- 4. RENDER (레이어 캐시) ---------- */
 const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('stageWrap');
 const layer = document.createElement('canvas'), lctx = layer.getContext('2d');
 let currentIR = null, animToken = 0, isPlaying = false;
-const R = { ir: null, bb: null, tf: null, done: -1 };   // 렌더 캐시 상태
+const R = { ir: null, bb: null, tf: null, done: -1 };
 
 function sizeCanvas(){
   const r = wrap.getBoundingClientRect();
@@ -1084,16 +1202,16 @@ function bbox(ir){
 function setIR(ir){
   R.ir = ir; R.bb = bbox(ir); R.tf = null; R.done = -1;
   lctx.setTransform(1,0,0,1,0,0);
-  lctx.clearRect(0,0,layer.width,layer.height);   // 이전 컴파일 잔상 제거
+  lctx.clearRect(0,0,layer.width,layer.height);
 }
 function fit(bb, w, h, dpr){
-  const pad = Math.min(42, w*0.12, h*0.12);        // [opt] 소형 캔버스 대응
+  const pad = Math.min(42, w*0.12, h*0.12);
   const bw = Math.max(bb.x1-bb.x0, 1), bh = Math.max(bb.y1-bb.y0, 1);
   let s = Math.min((w-pad*2)/bw, (h-pad*2)/bh);
   s = Math.max(0.01, Math.min(s, 3.4));
   return { s, ox:(w-bw*s)/2 - bb.x0*s, oy:(h-bh*s)/2 - bb.y0*s, dpr };
 }
-function getTF(){   // 캐시: 캔버스/dpr 변화 시에만 재계산
+function getTF(){
   const dpr = window.devicePixelRatio || 1;
   if (R.tf && R.tf.dpr === dpr && layer.width === cv.width && layer.height === cv.height) return R.tf;
   layer.width = cv.width; layer.height = cv.height;
@@ -1104,7 +1222,7 @@ function getTF(){   // 캐시: 캔버스/dpr 변화 시에만 재계산
 function drawOp(c, o, p, tf){
   const tx = x => x*tf.s + tf.ox, ty = y => y*tf.s + tf.oy;
   if (o.op === 'LINE'){
-    if (p <= 0) return;   // p=0에서 점 찍힘 방지
+    if (p <= 0) return;
     const ex = o.x1 + (o.x2-o.x1)*p, ey = o.y1 + (o.y2-o.y1)*p;
     c.strokeStyle = '#'+o.color;
     c.lineWidth = Math.max(0.6, o.weight*tf.s);
@@ -1118,11 +1236,11 @@ function drawOp(c, o, p, tf){
     c.globalAlpha = 1;
   }
 }
-function bakeUpTo(idx){   // 완료 op을 오프스크린 레이어에 굽기 (한 번만)
+function bakeUpTo(idx){
   const tf = getTF();
   if (!tf || idx < 0) return;
   lctx.setTransform(tf.dpr,0,0,tf.dpr,0,0);
-  lctx.lineCap = lctx.lineJoin = 'round';          // [opt] 프레임당 1회
+  lctx.lineCap = lctx.lineJoin = 'round';
   for (let i = R.done+1; i <= idx && i < R.ir.length; i++) drawOp(lctx, R.ir[i], 1, tf);
   if (idx > R.done) R.done = Math.min(idx, R.ir.length-1);
 }
@@ -1146,12 +1264,12 @@ function crosshair(x,y){
   ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.stroke();
   ctx.restore();
 }
-function drawFrame(i, p, showPen){   // 프레임당 O(1) + 현재 op 1개
+function drawFrame(i, p, showPen){
   const tf = getTF(); if (!tf) return;
-  if (i-1 > R.done) bakeUpTo(i-1);   // 프레임 드랍 시 완료분 일괄 베이크
+  if (i-1 > R.done) bakeUpTo(i-1);
   blitLayer();
   ctx.setTransform(tf.dpr,0,0,tf.dpr,0,0);
-  ctx.lineCap = ctx.lineJoin = 'round';            // [opt]
+  ctx.lineCap = ctx.lineJoin = 'round';
   const o = R.ir[i];
   if (o){
     drawOp(ctx, o, p, tf);
@@ -1188,7 +1306,8 @@ function playIR(ir, animate, onDone){
   }
   isPlaying = true;
   const total = ir.length;
-  const perOp = Math.min(150, Math.max(14, 1200/total));   // [opt] 페이싱
+  // [v1.0.4] 총 시간 진짜 상한: op가 많으면 프레임당 여러 op 베이크(레이어 캐시 활용)
+  const perOp = Math.min(150, Math.max(0.1, 1200/total));
   const t0 = performance.now();
   requestAnimationFrame(function frame(now){
     if (token !== animToken) return;
@@ -1202,11 +1321,237 @@ function playIR(ir, animate, onDone){
   });
 }
 
+/* ---------- 5. TRACER (IMG → JVG) ---------- */
+const TR = { img: null, W: 0, H: 0, strokes: [], mode: 'mono' };
+const dz = $('dropzone');
+const trcCv = $('trcCv'), tctx = trcCv.getContext('2d');          // 미리보기 전용
+const pxCv = document.createElement('canvas');                    // [fix] 픽셀 판독 전용 (1x)
+const pctx = pxCv.getContext('2d', { willReadFrequently: true });
+
+function openTracer(){ $('trcBack').classList.add('open'); }
+function closeTracer(){ $('trcBack').classList.remove('open'); }
+
+function loadFile(file){
+  if (!file || !file.type.startsWith('image/')) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    TR.img = img;
+    dz.classList.add('has-img');
+    runTrace();
+  };
+  img.onerror = () => {   // [fix] 로드 실패 피드백
+    URL.revokeObjectURL(url);
+    dz.classList.remove('has-img');
+    const p = dz.querySelector('.dz-inner p');
+    p.textContent = '⚠ 이미지를 읽을 수 없습니다';
+    p.style.color = 'var(--red)';
+    setTimeout(() => { p.textContent = '이미지를 여기에 놓거나 클릭'; p.style.color = ''; }, 2200);
+  };
+  img.src = url;
+}
+
+function runTrace(){
+  if (!TR.img) return;
+  const iw = TR.img.naturalWidth, ih = TR.img.naturalHeight;
+  if (!iw || !ih) return;   // [fix] 크기 없는 이미지(SVG 등) 방어
+
+  const t0 = performance.now();
+  const detail = +$('cDetail').value, thresh = +$('cThresh').value,
+        minLen = +$('cMin').value, simp = +$('cSimp').value;
+
+  // 1) 다운스케일 + 픽셀 추출 — 1x 오프스크린 캔버스
+  //    [fix] getImageData는 transform을 무시하므로, 2x 미리보기 캔버스에서
+  //    읽으면 좌상단 1/4만 샘플링되던 버그를 분리된 캔버스로 해결
+  const sc = detail / Math.max(iw, ih);
+  const W = Math.max(8, Math.round(iw*sc)), H = Math.max(8, Math.round(ih*sc));
+  TR.W = W; TR.H = H;
+  pxCv.width = W; pxCv.height = H;
+  pctx.drawImage(TR.img, 0, 0, W, H);
+  const data = pctx.getImageData(0, 0, W, H).data;
+
+  // 2) 그레이스케일
+  const gray = new Float32Array(W*H);
+  for (let i = 0, p = 0; i < gray.length; i++, p += 4)
+    gray[i] = 0.299*data[p] + 0.587*data[p+1] + 0.114*data[p+2];
+
+  // 3) Sobel 엣지
+  const mag = new Float32Array(W*H);
+  let maxMag = 0;
+  for (let y = 1; y < H-1; y++){
+    for (let x = 1; x < W-1; x++){
+      const i = y*W+x;
+      const p00=gray[i-W-1],p01=gray[i-W],p02=gray[i-W+1],
+            p10=gray[i-1],               p12=gray[i+1],
+            p20=gray[i+W-1],p21=gray[i+W],p22=gray[i+W+1];
+      const gx = -p00-2*p01-p02+p20+2*p21+p22;
+      const gy = -p00+p02-2*p10+2*p12-p20+p22;
+      const m = Math.hypot(gx,gy);
+      mag[i] = m; if (m > maxMag) maxMag = m;
+    }
+  }
+
+  // 4) 임계값 — [fix] 단색 이미지(maxMag=0)면 엣지 없음
+  const th = maxMag > 0 ? (thresh/255) * maxMag : Infinity;
+  const edges = new Uint8Array(W*H);
+  let edgeCount = 0;
+  for (let i = 0; i < W*H; i++) if (mag[i] >= th){ edges[i] = 1; edgeCount++; }
+
+  // 5) 폴리라인 추적 (양방향 그리디 워크)
+  const paths = traceStrokes(edges, W, H);
+
+  // 6) RDP 단순화 + 색상 샘플링/양자화 (+ [fix] 출력 예산 상한)
+  const skipWhite = $('cSkipWhite').checked && TR.mode === 'color';
+  const out = [];
+  let budget = 15000;
+  for (const path of paths){
+    if (budget <= 0) break;
+    if (path.length < minLen) continue;
+    let pts = path.map(i => [i % W, (i/W)|0]);
+    if (simp > 0) pts = rdp(pts, simp);
+    if (pts.length < 2) continue;
+    let color = 'F5FAFF';
+    if (TR.mode === 'color'){
+      const mid = path[(path.length/2)|0], p = mid*4;
+      const q = v => Math.round(v/51)*51;   // 6단계 양자화
+      const r = q(data[p]), g = q(data[p+1]), b = q(data[p+2]);
+      if (skipWhite && (0.299*r + 0.587*g + 0.114*b) > 225) continue;
+      color = ((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1).toUpperCase();
+    }
+    out.push({ pts, color });
+    budget -= pts.length - 1;
+  }
+  const capped = budget <= 0;
+  TR.strokes = out;
+
+  // 7) 미리보기 + 통계
+  drawTracePreview();
+  const cmdCount = out.reduce((a,s) => a + s.pts.length - 1, 0);
+  const bytes = new Blob([buildJVG(out)]).size;
+  setTStat('tsPx', edgeCount);
+  setTStat('tsStroke', out.length);
+  setTStat('tsCmd', cmdCount + (capped ? '+' : ''));
+  setTStat('tsByte', bytes < 1024 ? bytes : (bytes/1024).toFixed(1)+'K');
+  setTStat('tsMs', (performance.now()-t0).toFixed(1));
+  $('trcInsert').style.opacity = out.length ? 1 : .4;
+}
+
+function traceStrokes(edges, W, H){
+  const visited = new Uint8Array(W*H);
+  const strokes = [];
+  const DIRS = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  const walk = start => {
+    const path = [];
+    let cur = start, pd = null;
+    for(;;){
+      const cx = cur % W, cy = (cur/W)|0;
+      let best = -1, bd = null, bestScore = -1;
+      for (const d of DIRS){
+        const nx = cx+d[0], ny = cy+d[1];
+        if (nx<0||ny<0||nx>=W||ny>=H) continue;
+        const ni = ny*W+nx;
+        if (!edges[ni] || visited[ni]) continue;
+        let s = 1;
+        if (pd) s = (d[0]===pd[0]&&d[1]===pd[1]) ? 4 : ((d[0]*pd[0]+d[1]*pd[1]) > 0 ? 2 : 1);
+        if (s > bestScore){ bestScore = s; best = ni; bd = d; }
+      }
+      if (best === -1) break;
+      visited[best] = 1;
+      path.push(best);
+      cur = best; pd = bd;
+    }
+    return path;
+  };
+  for (let i = 0; i < W*H; i++){
+    if (!edges[i] || visited[i]) continue;
+    visited[i] = 1;
+    const fwd = walk(i);
+    const back = walk(i);   // 반대 방향으로 연장
+    const path = back.reverse().concat([i], fwd);
+    if (path.length >= 2) strokes.push(path);
+  }
+  return strokes;
+}
+
+function rdp(pts, eps){   // Ramer–Douglas–Peucker (반복형)
+  if (pts.length <= 2) return pts.slice();
+  const keep = new Uint8Array(pts.length);
+  keep[0] = keep[pts.length-1] = 1;
+  const stack = [[0, pts.length-1]], e2 = eps*eps;
+  while (stack.length){
+    const [a, b] = stack.pop();
+    let maxD = -1, idx = -1;
+    const ax=pts[a][0], ay=pts[a][1], bx=pts[b][0], by=pts[b][1];
+    const dx=bx-ax, dy=by-ay, len2 = dx*dx+dy*dy;
+    for (let i=a+1;i<b;i++){
+      const px=pts[i][0]-ax, py=pts[i][1]-ay;
+      let d2;
+      if (len2 === 0) d2 = px*px+py*py;
+      else {
+        const t = Math.max(0, Math.min(1, (px*dx+py*dy)/len2));
+        const qx=px-t*dx, qy=py-t*dy; d2=qx*qx+qy*qy;
+      }
+      if (d2 > maxD){ maxD = d2; idx = i; }
+    }
+    if (maxD > e2 && idx !== -1){ keep[idx]=1; stack.push([a,idx],[idx,b]); }
+  }
+  return pts.filter((_,i) => keep[i]);
+}
+
+function buildJVG(strokes){
+  const L = ['JVG("1.0")', '', 'Weight(1)'];
+  if (TR.mode === 'mono'){
+    L.push('Color("F5FAFF")', '');
+    for (const s of strokes)
+      for (let i=0;i<s.pts.length-1;i++)
+        L.push('Line(' + s.pts[i][0] + ',' + s.pts[i][1] + ',' + s.pts[i+1][0] + ',' + s.pts[i+1][1] + ')');
+  } else {
+    const groups = new Map();   // 색상별 그룹핑 → Color() 전환 최소화
+    for (const s of strokes){
+      if (!groups.has(s.color)) groups.set(s.color, []);
+      groups.get(s.color).push(s);
+    }
+    for (const [color, sts] of groups){
+      L.push('', 'Color("' + color + '")');
+      for (const s of sts)
+        for (let i=0;i<s.pts.length-1;i++)
+          L.push('Line(' + s.pts[i][0] + ',' + s.pts[i][1] + ',' + s.pts[i+1][0] + ',' + s.pts[i+1][1] + ')');
+    }
+  }
+  return L.join('\n');
+}
+
+function drawTracePreview(){
+  const W = TR.W, H = TR.H;
+  if (!W || !H) return;
+  if (trcCv.width !== W*2 || trcCv.height !== H*2){ trcCv.width = W*2; trcCv.height = H*2; }
+  tctx.setTransform(2,0,0,2,0,0);
+  tctx.clearRect(0,0,W,H);
+  tctx.globalAlpha = 0.30;
+  tctx.drawImage(TR.img, 0, 0, W, H);
+  tctx.globalAlpha = 1;
+  tctx.lineCap = tctx.lineJoin = 'round';
+  tctx.lineWidth = 0.8;
+  for (const s of TR.strokes){
+    tctx.strokeStyle = TR.mode === 'mono' ? '#4FD8EB' : '#'+s.color;
+    tctx.beginPath();
+    s.pts.forEach((p,i) => i ? tctx.lineTo(p[0]+0.5,p[1]+0.5) : tctx.moveTo(p[0]+0.5,p[1]+0.5));
+    tctx.stroke();
+  }
+}
+
+function setTStat(id, v){
+  const el = $(id); el.textContent = v;
+  const box = el.parentElement;
+  box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+}
+
 /* ---------- UI 바인딩 ---------- */
 const ta = $('src'), gutter = $('gutter'), logView = $('v-log');
 let errLine = -1, deb = null;
-let compileSeq = 0;                                  // [fix] 컴파일 레이스 가드
-let lastLines = -1, lastErrLine = -2;                // [opt] gutter 캐시
+let compileSeq = 0;
+let lastLines = -1, lastErrLine = -2;
 
 function log(kind, tag, msg){
   const t = new Date().toTimeString().slice(0,8);
@@ -1230,7 +1575,7 @@ function setStat(id, val){
 }
 function updateGutter(){
   const n = ta.value.split('\n').length;
-  if (n === lastLines && errLine === lastErrLine) return;  // [opt] 변화 없으면 스킵
+  if (n === lastLines && errLine === lastErrLine) return;
   lastLines = n; lastErrLine = errLine;
   let h = '';
   for (let i = 1; i <= n; i++)
@@ -1264,7 +1609,8 @@ function renderAST(ast){
   $('v-ast').innerHTML = '<pre>' + j + '</pre>';
 }
 function renderIR(ir){
-  $('v-ir').innerHTML = ir.map((o,i) => {
+  const CAP = 2000;   // [fix] 대량 op에서 DOM 보호
+  let html = ir.slice(0, CAP).map((o,i) => {
     const idx = String(i).padStart(2,'0');
     if (o.op === 'LINE')
       return '<div class="ir-line" data-i="' + i + '"><span class="ir-i">' + idx + '</span><span class="ir-op op-line">LINE</span>' +
@@ -1273,12 +1619,16 @@ function renderIR(ir){
     return '<div class="ir-line" data-i="' + i + '"><span class="ir-i">' + idx + '</span><span class="ir-op op-fill">FILL</span>' +
       '<span class="ir-args">polygon(' + o.pts.length + ')  ' + o.pts.map(p => p.join(',')).join('  ') + '</span>' +
       '<span class="ir-meta"><i style="background:#' + o.color + '"></i>#' + o.color + '</span></div>';
-  }).join('') || '<span class="tk tk-pun">IR 없음</span>';
+  }).join('');
+  if (ir.length > CAP)
+    html += '<div class="ir-line"><span class="ir-i">…</span><span class="ir-op" style="color:var(--dim)">+' + (ir.length-CAP) + '</span>' +
+      '<span class="ir-args" style="color:var(--dim)">ops 생략 — ⬇ IR 다운로드로 전체 확인</span></div>';
+  $('v-ir').innerHTML = html || '<span class="tk tk-pun">IR 없음</span>';
 }
 
 async function compile(source, animate){
-  clearTimeout(deb);                    // [fix] 남은 auto-compile이 수동 실행을 죽이는 문제
-  const seq = ++compileSeq;             // [fix] 중복 컴파일 레이스 가드
+  clearTimeout(deb);
+  const seq = ++compileSeq;
   animToken++; isPlaying = false;
   errLine = -1; updateGutter();
   setIR([]);
@@ -1320,13 +1670,13 @@ async function compile(source, animate){
     setStage(3,'active');
     log('ok','OK','컴파일 완료 — ' + gen.ir.length + ' ops · 루프 ' + gen.loops + '개 · ' + ms.toFixed(1) + 'ms');
     playIR(gen.ir, animate, () => {
-      if (seq !== compileSeq) return;   // [fix] 주인이 바뀐 콜백은 침묵
+      if (seq !== compileSeq) return;
       setStage(3,'done');
       setLED('ok');
       setStatus('OK · ' + gen.ir.length + ' ops · ' + ms.toFixed(1) + 'ms');
     });
   } catch (e){
-    if (seq !== compileSeq) return;     // [fix]
+    if (seq !== compileSeq) return;
     if (e instanceof JvgError){
       errLine = e.line; updateGutter();
       log('err','ERR','line ' + e.line + ':' + e.col + ' — ' + e.message);
@@ -1337,7 +1687,7 @@ async function compile(source, animate){
       clearMain();
       $('prog').style.width = '0%';
     } else {
-      log('err','ERR','내부 오류 — ' + (e && e.message ? e.message : String(e)));   // [fix] 조용히 죽지 않게
+      log('err','ERR','내부 오류 — ' + (e && e.message ? e.message : String(e)));
       setLED('err'); setStatus('INTERNAL ERROR');
       note.textContent = '⚠ 내부 오류';
       note.className = 'stage-note err'; note.style.display = 'block';
@@ -1362,7 +1712,7 @@ ta.addEventListener('keydown', e => {
     const s = ta.selectionStart, ep = ta.selectionEnd;
     ta.value = ta.value.slice(0,s) + '  ' + ta.value.slice(ep);
     ta.selectionStart = ta.selectionEnd = s + 2;
-    ta.dispatchEvent(new Event('input', {bubbles:true}));   // [fix] gutter/auto-compile 반영
+    ta.dispatchEvent(new Event('input', {bubbles:true}));
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); compile(ta.value, true); }
 });
@@ -1372,7 +1722,7 @@ document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () =>
   b.classList.add('on'); $('v-' + b.dataset.v).classList.add('on');
 }));
 
-/* [new] IR 라인 hover → 캔버스에서 해당 op 하이라이트 */
+/* IR hover → 캔버스 하이라이트 */
 $('v-ir').addEventListener('mouseover', e => {
   const row = e.target.closest('.ir-line');
   if (!row || isPlaying || !currentIR || !currentIR.length) return;
@@ -1390,7 +1740,7 @@ $('v-ir').addEventListener('mouseover', e => {
 });
 $('v-ir').addEventListener('mouseleave', () => { if (!isPlaying) drawStatic(); });
 
-/* [new] 내보내기 */
+/* 내보내기 */
 function download(name, text, mime){
   const url = URL.createObjectURL(new Blob([text], {type: mime}));
   const a = Object.assign(document.createElement('a'), {href: url, download: name});
@@ -1403,6 +1753,57 @@ $('dlir').addEventListener('click', () => {
   download('drawing.ir.json',
     JSON.stringify({ format:'JVG-IR', spec:'1.0', ops: currentIR }, null, 2),
     'application/json');
+});
+
+/* ---------- TRACER 이벤트 ---------- */
+$('traceBtn').addEventListener('click', openTracer);
+$('trcClose').addEventListener('click', closeTracer);
+$('trcCancel').addEventListener('click', closeTracer);
+$('trcBack').addEventListener('click', e => { if (e.target === $('trcBack')) closeTracer(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTracer(); });
+
+dz.addEventListener('click', () => $('trcFile').click());
+$('trcFile').addEventListener('change', e => {
+  loadFile(e.target.files[0]);
+  e.target.value = '';   // [fix] 같은 파일 다시 선택 가능
+});
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+dz.addEventListener('drop', e => loadFile(e.dataTransfer.files[0]));
+
+document.addEventListener('paste', e => {
+  const cd = e.clipboardData;
+  if (!cd || !cd.items) return;
+  for (let k = 0; k < cd.items.length; k++){   // [fix] 인덱스 순회 (구형 사파리 호환)
+    const it = cd.items[k];
+    if (it && it.type && it.type.startsWith('image/')){ openTracer(); loadFile(it.getAsFile()); break; }
+  }
+});
+
+let trcDeb = null;
+['cDetail','cThresh','cMin','cSimp'].forEach(id => $(id).addEventListener('input', () => {
+  $('vDetail').textContent = $('cDetail').value;
+  $('vThresh').textContent = $('cThresh').value;
+  $('vMin').textContent = $('cMin').value;
+  $('vSimp').textContent = (+$('cSimp').value).toFixed(1);
+  clearTimeout(trcDeb); trcDeb = setTimeout(runTrace, 110);
+}));
+$('modeSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  $('modeSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  TR.mode = b.dataset.m;
+  $('skipWhiteWrap').style.opacity = TR.mode === 'color' ? 1 : .35;
+  runTrace();
+}));
+$('cSkipWhite').addEventListener('change', runTrace);
+
+$('trcInsert').addEventListener('click', () => {
+  if (!TR.strokes.length) return;
+  ta.value = buildJVG(TR.strokes);
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+  updateGutter(); updateMeta();
+  closeTracer();
+  compile(ta.value, true);
 });
 
 /* ---------- 샘플 ---------- */
@@ -1425,7 +1826,7 @@ document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () =
 /* ---------- 리사이즈 ---------- */
 new ResizeObserver(() => {
   sizeCanvas();
-  if (!isPlaying) drawStatic();   // getTF가 캐시 무효화 + 레이어 재베이크 처리
+  if (!isPlaying) drawStatic();
 }).observe(wrap);
 
 /* ---------- 초기 실행 ---------- */
