@@ -542,14 +542,9 @@ IR 예시 (빠른 시작의 사각형을 컴파일한 결과):
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{
-  margin:0; color:var(--ink);
-  font-family:'IBM Plex Sans KR',sans-serif;
-  background:
-    radial-gradient(900px 520px at 88% -12%, rgba(79,216,235,.09), transparent 60%),
-    radial-gradient(760px 520px at -8% 112%, rgba(255,180,84,.07), transparent 60%),
-    var(--bg);
-}
+body{margin:0;color:var(--ink);font-family:'IBM Plex Sans KR',sans-serif;background:
+  radial-gradient(900px 520px at 88% -12%, rgba(79,216,235,.09), transparent 60%),
+  radial-gradient(760px 520px at -8% 112%, rgba(255,180,84,.07), transparent 60%),var(--bg);}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:
   linear-gradient(rgba(79,216,235,.028) 1px,transparent 1px) 0 0/44px 44px,
   linear-gradient(90deg,rgba(79,216,235,.028) 1px,transparent 1px) 0 0/44px 44px;}
@@ -557,12 +552,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:#1B3E60;border-radius:5px;border:2px solid var(--panel2)}
 ::-webkit-scrollbar-track{background:transparent}
-
 .app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
 
-/* ---------- header ---------- */
-.top{display:flex;align-items:center;gap:14px;padding:11px 18px;flex:0 0 auto;
-  border-bottom:1px solid var(--line-soft);
+.top{display:flex;align-items:center;gap:14px;padding:11px 18px;flex:0 0 auto;border-bottom:1px solid var(--line-soft);
   background:linear-gradient(180deg,rgba(13,38,66,.92),rgba(9,26,46,.92));}
 .logo svg{display:block}
 .logo .lp{stroke-dasharray:60;stroke-dashoffset:60;animation:dash 3.4s ease-in-out infinite alternate}
@@ -575,7 +567,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .brand p{margin:3px 0 0;font:500 9.5px var(--disp);letter-spacing:.22em;color:var(--mut);text-transform:uppercase}
 .top-right{margin-left:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
 .badge{font:600 9.5px var(--disp);letter-spacing:.14em;padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--mut)}
-.badge.hot{color:var(--amber);border-color:rgba(255,180,84,.45);background:rgba(255,180,84,.06)}
 .status{display:flex;align-items:center;gap:8px;font:500 11px var(--mono);color:var(--mut);min-width:170px;justify-content:flex-end}
 .led{width:9px;height:9px;border-radius:50%;background:#33587C;flex:0 0 auto;transition:.2s}
 .led.ok{background:var(--green);box-shadow:0 0 9px rgba(92,224,165,.7)}
@@ -583,24 +574,19 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .led.err{background:var(--red);box-shadow:0 0 9px rgba(255,107,122,.7)}
 @keyframes ledp{from{opacity:.35}to{opacity:1}}
 
-/* ---------- layout ---------- */
 .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(350px,440px) 1fr;gap:14px;padding:14px 18px 0}
 .panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;
-  background:linear-gradient(180deg,var(--panel),var(--panel2));
-  border:1px solid var(--line);border-radius:10px;
-  box-shadow:0 12px 34px rgba(2,10,20,.5);
-  animation:rise .55s cubic-bezier(.2,.7,.3,1) both}
+  background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 12px 34px rgba(2,10,20,.5);animation:rise .55s cubic-bezier(.2,.7,.3,1) both}
 .stage-panel{animation-delay:.07s}
 .pipe{margin:14px 18px 12px;height:224px;flex:0 0 auto;animation-delay:.14s}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-
 .ph{display:flex;align-items:center;gap:10px;padding:0 12px;height:42px;flex:0 0 auto;border-bottom:1px solid var(--line-soft)}
 .ph .dot{width:8px;height:8px;border-radius:2px;background:var(--cyan);box-shadow:0 0 8px rgba(79,216,235,.6)}
 .ph h2{margin:0;font:600 11px var(--disp);letter-spacing:.2em;color:var(--ink)}
 .ph .sub{font:400 10px var(--mono);color:var(--dim)}
 .ph .right{margin-left:auto;display:flex;align-items:center;gap:8px}
 
-/* ---------- editor ---------- */
 .ed{flex:1;display:flex;min-height:0;font:400 13px/22px var(--mono)}
 .gutter{width:46px;padding:12px 8px 60px 0;text-align:right;color:var(--dim);overflow:hidden;user-select:none;
   background:rgba(7,24,41,.55);border-right:1px solid var(--line-soft);font-size:11px;line-height:22px}
@@ -613,12 +599,10 @@ textarea::selection{background:rgba(79,216,235,.25)}
   border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim)}
 .ef .hint{margin-left:auto;letter-spacing:.05em}
 .ef .hint b{color:var(--amber);font-weight:700}
-
 .chip{font:500 10px var(--mono);color:var(--mut);border:1px solid var(--line);padding:4px 8px;border-radius:4px;
   background:transparent;cursor:pointer;transition:.18s;letter-spacing:.03em}
 .chip:hover{color:#062036;background:var(--cyan);border-color:var(--cyan);transform:translateY(-1px);box-shadow:0 4px 12px rgba(79,216,235,.35)}
 .chip.on{color:var(--cyan);border-color:rgba(79,216,235,.55);background:rgba(79,216,235,.07)}
-
 .btn{font:700 11px var(--disp);letter-spacing:.14em;padding:8px 14px;border-radius:6px;border:1px solid transparent;
   cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:6px}
 .btn-p{background:var(--amber);color:#241305;box-shadow:0 2px 12px rgba(255,180,84,.28)}
@@ -627,7 +611,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .btn-g{background:transparent;color:var(--mut);border-color:var(--line)}
 .btn-g:hover{color:var(--cyan);border-color:rgba(79,216,235,.5);transform:translateY(-1px)}
 .btn-s{padding:5px 9px;font-size:10px;letter-spacing:.1em}
-
 .tgl{display:flex;align-items:center;gap:6px;font:500 10px var(--mono);color:var(--mut);cursor:pointer}
 .tgl input{display:none}
 .tgl i{width:26px;height:14px;border-radius:8px;background:var(--line);position:relative;transition:.2s;flex:0 0 auto}
@@ -635,7 +618,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .tgl input:checked+i{background:rgba(92,224,165,.35)}
 .tgl input:checked+i::after{left:14px;background:var(--green)}
 
-/* ---------- stage ---------- */
 .stage{flex:1;position:relative;min-height:0;background:
   linear-gradient(rgba(79,216,235,.05) 1px,transparent 1px) 0 0/16px 16px,
   linear-gradient(90deg,rgba(79,216,235,.05) 1px,transparent 1px) 0 0/16px 16px,
@@ -653,7 +635,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .stage-note{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   font:500 12px var(--mono);color:var(--dim);letter-spacing:.1em;text-align:center;pointer-events:none}
 .stage-note.err{color:var(--red)}
-
 .stats{display:grid;grid-template-columns:repeat(6,1fr);flex:0 0 auto;border-top:1px solid var(--line-soft)}
 .stat{padding:8px 12px;border-right:1px solid var(--line-soft)}
 .stat:last-child{border-right:0}
@@ -663,36 +644,29 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .stat.flash{animation:flash .55s}
 @keyframes flash{0%{background:rgba(79,216,235,.16)}100%{background:transparent}}
 
-/* ---------- pipeline ---------- */
 .stages{display:flex;align-items:center;gap:7px;margin-left:18px}
 .stg{display:flex;align-items:center;gap:6px;font:600 9.5px var(--disp);letter-spacing:.12em;color:var(--dim);
   padding:4px 9px;border:1px solid var(--line-soft);border-radius:5px;transition:.25s}
-.stg i{font-style:normal;width:13px;height:13px;border:1px solid currentColor;border-radius:3px;
-  display:grid;place-items:center;font-size:8px}
+.stg i{font-style:normal;width:13px;height:13px;border:1px solid currentColor;border-radius:3px;display:grid;place-items:center;font-size:8px}
 .stg.active{color:var(--amber);border-color:rgba(255,180,84,.6);box-shadow:0 0 13px rgba(255,180,84,.28);animation:ledp .6s infinite alternate}
 .stg.done{color:var(--green);border-color:rgba(92,224,165,.45)}
 .stg.fail{color:var(--red);border-color:rgba(255,107,122,.55)}
 .arr{color:var(--dim);font-size:10px}
-
 .tabs{display:flex;gap:2px}
 .tab{font:600 10px var(--disp);letter-spacing:.14em;color:var(--mut);background:none;border:none;
   border-bottom:2px solid transparent;padding:6px 9px;cursor:pointer;transition:.18s}
 .tab:hover{color:var(--ink)}
 .tab.on{color:var(--cyan);border-bottom-color:var(--cyan)}
-
 .views{flex:1;min-height:0;position:relative}
 .view{position:absolute;inset:0;overflow:auto;padding:10px 14px;font:400 11.5px/1.75 var(--mono);display:none}
 .view.on{display:block}
-
 .tk{display:inline-block;margin:2px 3px 2px 0;padding:1px 6px;border-radius:3px;border:1px solid var(--line-soft);font-size:11px}
 .tk-id{color:var(--cyan);border-color:rgba(79,216,235,.3);background:rgba(79,216,235,.06)}
 .tk-str{color:var(--amber);border-color:rgba(255,180,84,.3);background:rgba(255,180,84,.06)}
 .tk-num{color:var(--green);border-color:rgba(92,224,165,.3);background:rgba(92,224,165,.06)}
 .tk-pun{color:var(--dim)}
-
 .view pre{margin:0;font:inherit}
 .j-key{color:var(--cyan)} .j-str{color:var(--amber)} .j-num{color:var(--green)}
-
 .ir-line{display:flex;gap:12px;padding:1.5px 4px;align-items:baseline;white-space:nowrap;border-radius:3px;transition:background .12s}
 .ir-line:hover{background:rgba(79,216,235,.10)}
 .ir-i{color:var(--dim);width:20px;flex:0 0 auto}
@@ -701,7 +675,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .ir-args{color:var(--ink)}
 .ir-meta{color:var(--mut);display:flex;align-items:center;gap:5px}
 .ir-meta i{width:9px;height:9px;border-radius:2px;display:inline-block;border:1px solid rgba(255,255,255,.28)}
-
 .log-e{display:flex;gap:10px;padding:1.5px 0;align-items:baseline;animation:login .25s ease both}
 @keyframes login{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
 .log-t{color:var(--dim);font-size:10px;flex:0 0 auto}
@@ -710,26 +683,21 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .tag-info{color:var(--cyan)} .tag-state{color:var(--yellow)}
 .log-m{color:var(--ink)}
 .log-e.warn .log-m{color:#FFD9A8} .log-e.err .log-m{color:#FFC2CA}
-
 .foot{display:flex;justify-content:space-between;gap:12px;padding:8px 18px;flex:0 0 auto;
   border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim);letter-spacing:.05em;flex-wrap:wrap}
 .foot b{color:var(--mut);font-weight:500}
 
-/* ---------- tracer modal ---------- */
 .trc-back{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
   background:rgba(4,14,26,.74);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 .trc-back.open{display:flex;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0}}
-.trc-panel{width:min(880px,94vw);height:min(560px,92vh);display:flex;flex-direction:column;
-  background:linear-gradient(180deg,var(--panel),var(--panel2));
-  border:1px solid var(--line);border-radius:12px;
-  box-shadow:0 30px 80px rgba(0,0,0,.6);
-  animation:popIn .3s cubic-bezier(.2,.9,.3,1.15)}
+.trc-panel{width:min(880px,94vw);height:min(580px,92vh);display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);animation:popIn .3s cubic-bezier(.2,.9,.3,1.15)}
 @keyframes popIn{from{opacity:0;transform:translateY(18px) scale(.96)}}
 .trc-body{flex:1;min-height:0;display:grid;grid-template-columns:1.25fr .9fr;gap:14px;padding:14px}
 .trc-left{display:flex;flex-direction:column;min-height:0;gap:10px}
 .trc-right{display:flex;flex-direction:column;min-height:0;overflow:auto;padding-right:2px}
-
 .dropzone{position:relative;flex:1;min-height:200px;border:1.5px dashed var(--line);border-radius:8px;overflow:hidden;
   cursor:pointer;transition:.2s;background:
   linear-gradient(rgba(79,216,235,.04) 1px,transparent 1px) 0 0/14px 14px,
@@ -746,15 +714,13 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .dropzone.has-img .dz-inner{opacity:0;pointer-events:none}
 #trcCv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none}
 .dropzone.has-img #trcCv{display:block}
-
 .trc-stats{display:flex;flex:0 0 auto;border:1px solid var(--line-soft);border-radius:6px;overflow:hidden}
 .trc-stats span{flex:1;padding:6px 4px;text-align:center;font:600 7.5px var(--disp);letter-spacing:.12em;color:var(--dim);
   border-right:1px solid var(--line-soft);background:rgba(7,24,41,.4)}
 .trc-stats span:last-child{border-right:0}
 .trc-stats b{display:block;font:700 13px/1.2 var(--disp);color:var(--cyan)}
 .trc-stats span:nth-child(even) b{color:var(--amber)}
-
-.ctl{display:block;font:500 10.5px var(--mono);color:var(--mut);margin-bottom:13px}
+.ctl{display:block;font:500 10.5px var(--mono);color:var(--mut);margin-bottom:12px}
 .ctl b{color:var(--cyan);float:right;font-weight:700}
 .ctl input[type=range]{width:100%;margin-top:7px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
   background:var(--line);outline:none;cursor:pointer}
@@ -763,14 +729,14 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .ctl input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25)}
 .ctl input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--amber);
   border:2px solid #241305;box-shadow:0 0 8px rgba(255,180,84,.5)}
-
+.trc-hint{font:400 9.5px/1.7 var(--mono);color:var(--dim);margin:2px 0 10px;padding:8px 10px;
+  border-left:2px solid var(--line);background:rgba(79,216,235,.04);border-radius:0 4px 4px 0}
 .ctl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 12px}
 .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .seg button{font:600 10px var(--disp);letter-spacing:.1em;padding:6px 13px;background:transparent;color:var(--mut);
   border:0;cursor:pointer;transition:.18s}
 .seg button.on{background:var(--cyan);color:#062036}
 .seg button:not(.on):hover{color:var(--ink)}
-
 .trc-foot{margin-top:auto;display:flex;justify-content:flex-end;gap:8px;padding-top:12px}
 
 @media(max-width:1020px){
@@ -792,7 +758,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
 <body>
 <div class="app">
 
-  <!-- ===== HEADER ===== -->
   <header class="top">
     <div class="logo" aria-hidden="true">
       <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -807,7 +772,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
       <p>Jun Vector Graphics · Compiler</p>
     </div>
     <div class="top-right">
-      <span class="badge hot">SPEC v1.0</span>
       <span class="badge">LINE-ONLY</span>
       <span class="badge">COMPILE-TIME FILL</span>
       <span class="badge">IMG TRACE</span>
@@ -815,10 +779,7 @@ textarea::selection{background:rgba(79,216,235,.25)}
     </div>
   </header>
 
-  <!-- ===== WORKBENCH ===== -->
   <main class="main">
-
-    <!-- editor -->
     <section class="panel editor-panel">
       <div class="ph">
         <span class="dot" style="background:var(--amber);box-shadow:0 0 8px rgba(255,180,84,.6)"></span>
@@ -846,7 +807,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
       </div>
     </section>
 
-    <!-- stage -->
     <section class="panel stage-panel">
       <div class="ph">
         <span class="dot"></span>
@@ -875,7 +835,6 @@ textarea::selection{background:rgba(79,216,235,.25)}
     </section>
   </main>
 
-  <!-- ===== PIPELINE ===== -->
   <section class="panel pipe">
     <div class="ph">
       <span class="dot" style="background:var(--green);box-shadow:0 0 8px rgba(92,224,165,.6)"></span>
@@ -902,8 +861,8 @@ textarea::selection{background:rgba(79,216,235,.25)}
   </section>
 
   <footer class="foot">
-    <span><b>JVG v1.0</b> — Jun Vector Graphics · 모든 그림은 선(Line)으로 표현한다</span>
-    <span>compiler <b>v1.0.4</b> · 트레이서 픽셀 파이프라인 수정 · 대량 op 안전장치</span>
+    <span><b>JVG</b> — Jun Vector Graphics · 모든 그림은 선(Line)으로 표현한다</span>
+    <span>기본값 <b>Color FFFFFF · Weight 1</b> · 열린 Fill()은 무시(선분 유지)</span>
   </footer>
 </div>
 
@@ -912,7 +871,7 @@ textarea::selection{background:rgba(79,216,235,.25)}
   <div class="trc-panel">
     <div class="ph">
       <span class="dot" style="background:var(--yellow);box-shadow:0 0 8px rgba(255,210,63,.6)"></span>
-      <h2>TRACE</h2><span class="sub">PNG · JPEG → JVG (Sobel → 폴리라인 추적 → RDP)</span>
+      <h2>TRACE</h2><span class="sub">PNG · JPEG → JVG · Gaussian → Sobel → NMS → Hysteresis → Sub-pixel</span>
       <div class="right"><button class="btn btn-g btn-s" id="trcClose">✕ 닫기</button></div>
     </div>
     <div class="trc-body">
@@ -935,18 +894,25 @@ textarea::selection{background:rgba(79,216,235,.25)}
         </div>
       </div>
       <div class="trc-right">
-        <label class="ctl">해상도 (긴 변) <b id="vDetail">180</b>px
-          <input type="range" id="cDetail" min="80" max="320" step="10" value="180">
+        <label class="ctl">해상도 (긴 변) <b id="vDetail">480</b>px
+          <input type="range" id="cDetail" min="160" max="800" step="20" value="480">
         </label>
-        <label class="ctl">엣지 임계값 <b id="vThresh">64</b>
-          <input type="range" id="cThresh" min="8" max="200" step="2" value="64">
+        <label class="ctl">엣지 임계값 <b id="vThresh">50</b>
+          <input type="range" id="cThresh" min="8" max="200" step="2" value="50">
         </label>
-        <label class="ctl">최소 선 길이 <b id="vMin">4</b>px
-          <input type="range" id="cMin" min="2" max="24" step="1" value="4">
+        <label class="ctl">노이즈 제거 <b id="vDenoise">1</b>
+          <input type="range" id="cDenoise" min="0" max="3" step="1" value="1">
         </label>
-        <label class="ctl">단순화 강도 (RDP) <b id="vSimp">1.2</b>
-          <input type="range" id="cSimp" min="0" max="3" step="0.2" value="1.2">
+        <label class="ctl">최소 선 길이 <b id="vMin">5</b>px
+          <input type="range" id="cMin" min="2" max="24" step="1" value="5">
         </label>
+        <label class="ctl">곡선 스무딩 <b id="vSmooth">1</b>
+          <input type="range" id="cSmooth" min="0" max="2" step="1" value="1">
+        </label>
+        <label class="ctl">단순화 (RDP) <b id="vSimp">0.8</b>
+          <input type="range" id="cSimp" min="0" max="3" step="0.1" value="0.8">
+        </label>
+        <p class="trc-hint">선명한 로고 → 임계값 ↓ &nbsp;·&nbsp; 노이즈 많은 사진 → 노이즈 제거 ↑ &nbsp;·&nbsp; 부드러운 곡선 → 스무딩 ↑</p>
         <div class="ctl-row">
           <div class="seg" id="modeSeg">
             <button data-m="mono" class="on">모노</button>
@@ -964,17 +930,11 @@ textarea::selection{background:rgba(79,216,235,.25)}
 </div>
 
 <script>
-/* ============================================================
-   JVG v1.0 Compiler — LEXER → PARSER → CODEGEN(B) → RENDER
-   v1.0.4 : 트레이서 픽셀 판독 수정(getImageData는 transform 무시),
-            애니메이션 총 시간 진짜 상한, 단색/SVG 이미지 방어,
-            대량 출력 예산 상한 + IR 뷰 DOM 캡
-   ============================================================ */
+/* JVG Compiler — LEXER → PARSER → CODEGEN → RENDER + IMG TRACER */
 'use strict';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
 class JvgError extends Error {
   constructor(msg, line, col){ super(msg); this.line = line; this.col = col; }
 }
@@ -1024,18 +984,12 @@ function lex(src){
 }
 
 /* ---------- 2. PARSER ---------- */
-const SIG = {
-  JVG:    ['string'],
-  Color:  ['string'],
-  Weight: ['number'],
-  Line:   ['number','number','number','number'],
-  Fill:   []
-};
+const SIG = { JVG:['string'], Color:['string'], Weight:['number'],
+  Line:['number','number','number','number'], Fill:[] };
 function parse(tokens){
   const ast = [];
   let p = 0;
-  const peek = () => tokens[p];
-  const next = () => tokens[p++];
+  const peek = () => tokens[p], next = () => tokens[p++];
   const expect = type => {
     const t = next();
     if (t.type !== type)
@@ -1052,8 +1006,7 @@ function parse(tokens){
       for(;;){
         const t = next();
         const want = sig[args.length];
-        if (want === undefined)
-          throw new JvgError(id.value + '() 인자가 너무 많습니다', t.line, t.col);
+        if (want === undefined) throw new JvgError(id.value + '() 인자가 너무 많습니다', t.line, t.col);
         if (want === 'string' && t.type !== 'STRING')
           throw new JvgError(id.value + '()의 ' + (args.length+1) + '번째 인자는 문자열이어야 합니다', t.line, t.col);
         if (want === 'number' && t.type !== 'NUMBER')
@@ -1071,23 +1024,17 @@ function parse(tokens){
   return ast;
 }
 
-/* ---------- 3. CODEGEN (방식 B: 상태 bake + 컴파일 타임 Fill) ---------- */
+/* ---------- 3. CODEGEN ---------- */
 function codegen(ast, log){
   if (!ast.length || ast[0].cmd !== 'JVG')
     throw new JvgError('JVG("1.0") 헤더가 첫 번째 명령이어야 합니다', 1, 1);
   if (ast[0].args[0] !== '1.0')
-    throw new JvgError('지원하지 않는 버전 "' + ast[0].args[0] + '" — 대상은 JVG 1.0입니다', ast[0].line, 1);
-
+    throw new JvgError('지원하지 않는 버전 "' + ast[0].args[0] + '"', ast[0].line, 1);
   const close = (a,b) => Math.abs(a[0]-b[0]) < 1e-6 && Math.abs(a[1]-b[1]) < 1e-6;
   const ir = [];
-  let color = 'FFFFFF', weight = 1;
-  let pending = [];
-  let loops = 0;
-
+  let color = 'FFFFFF', weight = 1, pending = [], loops = 0;
   for (const n of ast.slice(1)){
-    if (n.cmd === 'JVG'){
-      throw new JvgError('JVG() 헤더는 중복될 수 없습니다 (첫 줄에만 허용)', n.line, 1);
-    }
+    if (n.cmd === 'JVG') throw new JvgError('JVG() 헤더는 중복될 수 없습니다 (첫 줄에만 허용)', n.line, 1);
     else if (n.cmd === 'Color'){
       const hex = n.args[0];
       if (!/^[0-9a-fA-F]{6}$/.test(hex))
@@ -1126,7 +1073,6 @@ function codegen(ast, log){
   return { ir, loops };
 }
 
-/* 닫힌 루프 추출 — DFS 백트래킹 + 탐색 예산 상한 */
 function extractLoops(segs, close){
   const n = segs.length;
   const used = new Array(n).fill(false);
@@ -1136,8 +1082,7 @@ function extractLoops(segs, close){
     progress = false;
     for (let s = 0; s < n; s++){
       if (used[s]) continue;
-      const path = [s];
-      used[s] = true;
+      const path = [s]; used[s] = true;
       const target = segs[s].a;
       let closed = false;
       const dfs = cur => {
@@ -1159,11 +1104,7 @@ function extractLoops(segs, close){
         for (let k = 1; k < pts.length; k++)
           if (!close(pts[k], clean[clean.length-1])) clean.push(pts[k]);
         if (clean.length > 1 && close(clean[clean.length-1], clean[0])) clean.pop();
-        if (clean.length >= 3){
-          loops.push({ pts: clean, segs: path.length });
-          progress = true;
-          break;
-        }
+        if (clean.length >= 3){ loops.push({ pts: clean, segs: path.length }); progress = true; break; }
         for (const idx of path) used[idx] = false;
       } else {
         for (const idx of path) used[idx] = false;
@@ -1290,8 +1231,7 @@ function playIR(ir, animate, onDone){
   setIR(ir);
   currentIR = ir;
   if (!ir.length){
-    isPlaying = false;
-    clearMain();
+    isPlaying = false; clearMain();
     note.textContent = '그리기 명령이 없습니다';
     note.className = 'stage-note'; note.style.display = 'block';
     prog.style.width = '100%';
@@ -1299,14 +1239,12 @@ function playIR(ir, animate, onDone){
   }
   note.style.display = 'none';
   if (!animate){
-    isPlaying = false;
-    drawStatic();
+    isPlaying = false; drawStatic();
     prog.style.width = '100%';
     onDone && onDone(); return;
   }
   isPlaying = true;
   const total = ir.length;
-  // [v1.0.4] 총 시간 진짜 상한: op가 많으면 프레임당 여러 op 베이크(레이어 캐시 활용)
   const perOp = Math.min(150, Math.max(0.1, 1200/total));
   const t0 = performance.now();
   requestAnimationFrame(function frame(now){
@@ -1321,11 +1259,11 @@ function playIR(ir, animate, onDone){
   });
 }
 
-/* ---------- 5. TRACER (IMG → JVG) ---------- */
+/* ---------- 5. TRACER v2 (Canny 스타일 + 서브픽셀) ---------- */
 const TR = { img: null, W: 0, H: 0, strokes: [], mode: 'mono' };
 const dz = $('dropzone');
-const trcCv = $('trcCv'), tctx = trcCv.getContext('2d');          // 미리보기 전용
-const pxCv = document.createElement('canvas');                    // [fix] 픽셀 판독 전용 (1x)
+const trcCv = $('trcCv'), tctx = trcCv.getContext('2d');
+const pxCv = document.createElement('canvas');
 const pctx = pxCv.getContext('2d', { willReadFrequently: true });
 
 function openTracer(){ $('trcBack').classList.add('open'); }
@@ -1335,13 +1273,8 @@ function loadFile(file){
   if (!file || !file.type.startsWith('image/')) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.onload = () => {
-    URL.revokeObjectURL(url);
-    TR.img = img;
-    dz.classList.add('has-img');
-    runTrace();
-  };
-  img.onerror = () => {   // [fix] 로드 실패 피드백
+  img.onload = () => { URL.revokeObjectURL(url); TR.img = img; dz.classList.add('has-img'); runTrace(); };
+  img.onerror = () => {
     URL.revokeObjectURL(url);
     dz.classList.remove('has-img');
     const p = dz.querySelector('.dz-inner p');
@@ -1352,18 +1285,33 @@ function loadFile(file){
   img.src = url;
 }
 
+function gaussBlur(src, W, H){   // 3x3 분리형 가우시안 [1,2,1]
+  const tmp = new Float32Array(W*H), out = new Float32Array(W*H);
+  for (let y = 0; y < H; y++){
+    const row = y*W;
+    for (let x = 0; x < W; x++){
+      const l = src[row + (x>0?x-1:0)], r = src[row + (x<W-1?x+1:x)], c = src[row+x];
+      tmp[row+x] = (l + 2*c + r) * 0.25;
+    }
+  }
+  for (let y = 0; y < H; y++){
+    for (let x = 0; x < W; x++){
+      const u = tmp[(y>0?y-1:0)*W + x], d = tmp[(y<H-1?y+1:y)*W + x], c = tmp[y*W+x];
+      out[y*W+x] = (u + 2*c + d) * 0.25;
+    }
+  }
+  return out;
+}
+
 function runTrace(){
   if (!TR.img) return;
   const iw = TR.img.naturalWidth, ih = TR.img.naturalHeight;
-  if (!iw || !ih) return;   // [fix] 크기 없는 이미지(SVG 등) 방어
-
+  if (!iw || !ih) return;
   const t0 = performance.now();
-  const detail = +$('cDetail').value, thresh = +$('cThresh').value,
-        minLen = +$('cMin').value, simp = +$('cSimp').value;
+  const detail=+$('cDetail').value, thresh=+$('cThresh').value, minLen=+$('cMin').value,
+        simp=+$('cSimp').value, denoise=+$('cDenoise').value, smooth=+$('cSmooth').value;
 
-  // 1) 다운스케일 + 픽셀 추출 — 1x 오프스크린 캔버스
-  //    [fix] getImageData는 transform을 무시하므로, 2x 미리보기 캔버스에서
-  //    읽으면 좌상단 1/4만 샘플링되던 버그를 분리된 캔버스로 해결
+  // 1) 다운스케일 + 픽셀 추출
   const sc = detail / Math.max(iw, ih);
   const W = Math.max(8, Math.round(iw*sc)), H = Math.max(8, Math.round(ih*sc));
   TR.W = W; TR.H = H;
@@ -1371,13 +1319,14 @@ function runTrace(){
   pctx.drawImage(TR.img, 0, 0, W, H);
   const data = pctx.getImageData(0, 0, W, H).data;
 
-  // 2) 그레이스케일
-  const gray = new Float32Array(W*H);
+  // 2) 그레이스케일 + 노이즈 제거
+  let gray = new Float32Array(W*H);
   for (let i = 0, p = 0; i < gray.length; i++, p += 4)
     gray[i] = 0.299*data[p] + 0.587*data[p+1] + 0.114*data[p+2];
+  for (let k = 0; k < denoise; k++) gray = gaussBlur(gray, W, H);
 
-  // 3) Sobel 엣지
-  const mag = new Float32Array(W*H);
+  // 3) Sobel (크기 + 방향)
+  const mag = new Float32Array(W*H), dirX = new Float32Array(W*H), dirY = new Float32Array(W*H);
   let maxMag = 0;
   for (let y = 1; y < H-1; y++){
     for (let x = 1; x < W-1; x++){
@@ -1388,33 +1337,93 @@ function runTrace(){
       const gx = -p00-2*p01-p02+p20+2*p21+p22;
       const gy = -p00+p02-2*p10+2*p12-p20+p22;
       const m = Math.hypot(gx,gy);
-      mag[i] = m; if (m > maxMag) maxMag = m;
+      mag[i] = m;
+      if (m > 0){ const inv = 1/m; dirX[i] = gx*inv; dirY[i] = gy*inv; }
+      if (m > maxMag) maxMag = m;
     }
   }
 
-  // 4) 임계값 — [fix] 단색 이미지(maxMag=0)면 엣지 없음
-  const th = maxMag > 0 ? (thresh/255) * maxMag : Infinity;
-  const edges = new Uint8Array(W*H);
+  // 4) 비최대 억제(NMS) → 1px 얇은 엣지
+  const thin = new Float32Array(W*H);
+  for (let y = 1; y < H-1; y++){
+    for (let x = 1; x < W-1; x++){
+      const i = y*W+x, m = mag[i];
+      if (m < 1e-3) continue;
+      const dx = Math.round(dirX[i]), dy = Math.round(dirY[i]);
+      if (dx === 0 && dy === 0){ thin[i] = m; continue; }
+      const m1 = mag[i + dy*W + dx], m2 = mag[i - dy*W - dx];
+      if (m >= m1 && m >= m2) thin[i] = m;
+    }
+  }
+
+  // 5) 히스테리시스 이중 임계값 → 끊김 없는 연결
+  const hi = maxMag > 0 ? (thresh/255)*maxMag : Infinity, lo = hi*0.4;
+  const edges = new Uint8Array(W*H), queue = [];
+  for (let i = 0; i < W*H; i++){
+    if (thin[i] >= hi){ edges[i] = 2; queue.push(i); }
+    else if (thin[i] >= lo) edges[i] = 1;
+  }
+  let head = 0;
+  while (head < queue.length){
+    const i = queue[head++], x = i % W, y = (i/W)|0;
+    for (let dy = -1; dy <= 1; dy++){
+      const ny = y+dy; if (ny < 0 || ny >= H) continue;
+      for (let dx = -1; dx <= 1; dx++){
+        if (!dx && !dy) continue;
+        const nx = x+dx; if (nx < 0 || nx >= W) continue;
+        const ni = ny*W+nx;
+        if (edges[ni] === 1){ edges[ni] = 2; queue.push(ni); }
+      }
+    }
+  }
+  const edgeMask = new Uint8Array(W*H);
   let edgeCount = 0;
-  for (let i = 0; i < W*H; i++) if (mag[i] >= th){ edges[i] = 1; edgeCount++; }
+  for (let i = 0; i < W*H; i++) if (edges[i] === 2){ edgeMask[i] = 1; edgeCount++; }
 
-  // 5) 폴리라인 추적 (양방향 그리디 워크)
-  const paths = traceStrokes(edges, W, H);
+  // 6) 서브픽셀 보정 (포물선 피팅)
+  const refX = new Float32Array(W*H), refY = new Float32Array(W*H);
+  for (let i = 0; i < W*H; i++){
+    const x = i % W, y = (i/W)|0;
+    refX[i] = x; refY[i] = y;
+    if (!edgeMask[i]) continue;
+    const ox = Math.round(dirX[i]), oy = Math.round(dirY[i]);
+    if (!ox && !oy) continue;
+    const nx = x+ox; if (nx < 0 || nx >= W) continue;
+    const i1 = i + oy*W + ox, i2 = i - oy*W - ox;
+    if (i1 < 0 || i1 >= W*H || i2 < 0 || i2 >= W*H) continue;
+    const m0 = mag[i2], m1 = mag[i], m2 = mag[i1];
+    const den = m0 - 2*m1 + m2;
+    if (Math.abs(den) < 1e-6) continue;
+    let tt = (m0 - m2) / (2*den);
+    if (tt < -0.5) tt = -0.5; if (tt > 0.5) tt = 0.5;
+    refX[i] = x + tt*dirX[i];
+    refY[i] = y + tt*dirY[i];
+  }
 
-  // 6) RDP 단순화 + 색상 샘플링/양자화 (+ [fix] 출력 예산 상한)
+  // 7) 폴리라인 추적
+  const paths = traceStrokes(edgeMask, W, H);
+
+  // 8) 스무딩 + RDP + 소수점 좌표
   const skipWhite = $('cSkipWhite').checked && TR.mode === 'color';
+  const r1 = v => { const n = Math.round(v*10)/10; return n === 0 ? 0 : n; };
   const out = [];
-  let budget = 15000;
+  let budget = 25000;
   for (const path of paths){
     if (budget <= 0) break;
     if (path.length < minLen) continue;
-    let pts = path.map(i => [i % W, (i/W)|0]);
+    let pts = path.map(i => [refX[i], refY[i]]);
+    for (let k = 0; k < smooth; k++) pts = chaikin(pts);
     if (simp > 0) pts = rdp(pts, simp);
+    pts = pts.map(p => [r1(p[0]), r1(p[1])]);
+    const dd = [pts[0]];
+    for (let i = 1; i < pts.length; i++)
+      if (pts[i][0] !== dd[dd.length-1][0] || pts[i][1] !== dd[dd.length-1][1]) dd.push(pts[i]);
+    pts = dd;
     if (pts.length < 2) continue;
     let color = 'F5FAFF';
     if (TR.mode === 'color'){
       const mid = path[(path.length/2)|0], p = mid*4;
-      const q = v => Math.round(v/51)*51;   // 6단계 양자화
+      const q = v => Math.round(v/51)*51;
       const r = q(data[p]), g = q(data[p+1]), b = q(data[p+2]);
       if (skipWhite && (0.299*r + 0.587*g + 0.114*b) > 225) continue;
       color = ((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1).toUpperCase();
@@ -1425,7 +1434,6 @@ function runTrace(){
   const capped = budget <= 0;
   TR.strokes = out;
 
-  // 7) 미리보기 + 통계
   drawTracePreview();
   const cmdCount = out.reduce((a,s) => a + s.pts.length - 1, 0);
   const bytes = new Blob([buildJVG(out)]).size;
@@ -1467,14 +1475,26 @@ function traceStrokes(edges, W, H){
     if (!edges[i] || visited[i]) continue;
     visited[i] = 1;
     const fwd = walk(i);
-    const back = walk(i);   // 반대 방향으로 연장
+    const back = walk(i);
     const path = back.reverse().concat([i], fwd);
     if (path.length >= 2) strokes.push(path);
   }
   return strokes;
 }
 
-function rdp(pts, eps){   // Ramer–Douglas–Peucker (반복형)
+function chaikin(pts){   // 코너 커팅으로 곡선 스무딩
+  if (pts.length <= 2) return pts;
+  const out = [pts[0]];
+  for (let i = 0; i < pts.length-1; i++){
+    const a = pts[i], b = pts[i+1];
+    out.push([a[0]*0.75 + b[0]*0.25, a[1]*0.75 + b[1]*0.25]);
+    out.push([a[0]*0.25 + b[0]*0.75, a[1]*0.25 + b[1]*0.75]);
+  }
+  out.push(pts[pts.length-1]);
+  return out;
+}
+
+function rdp(pts, eps){
   if (pts.length <= 2) return pts.slice();
   const keep = new Uint8Array(pts.length);
   keep[0] = keep[pts.length-1] = 1;
@@ -1500,23 +1520,24 @@ function rdp(pts, eps){   // Ramer–Douglas–Peucker (반복형)
 }
 
 function buildJVG(strokes){
+  const f = v => { const s = v.toFixed(1); return s.endsWith('.0') ? s.slice(0,-2) : s; };
+  const seg = (s, L) => {
+    for (let i=0;i<s.pts.length-1;i++)
+      L.push('Line(' + f(s.pts[i][0]) + ',' + f(s.pts[i][1]) + ',' + f(s.pts[i+1][0]) + ',' + f(s.pts[i+1][1]) + ')');
+  };
   const L = ['JVG("1.0")', '', 'Weight(1)'];
   if (TR.mode === 'mono'){
     L.push('Color("F5FAFF")', '');
-    for (const s of strokes)
-      for (let i=0;i<s.pts.length-1;i++)
-        L.push('Line(' + s.pts[i][0] + ',' + s.pts[i][1] + ',' + s.pts[i+1][0] + ',' + s.pts[i+1][1] + ')');
+    for (const s of strokes) seg(s, L);
   } else {
-    const groups = new Map();   // 색상별 그룹핑 → Color() 전환 최소화
+    const groups = new Map();
     for (const s of strokes){
       if (!groups.has(s.color)) groups.set(s.color, []);
       groups.get(s.color).push(s);
     }
     for (const [color, sts] of groups){
       L.push('', 'Color("' + color + '")');
-      for (const s of sts)
-        for (let i=0;i<s.pts.length-1;i++)
-          L.push('Line(' + s.pts[i][0] + ',' + s.pts[i][1] + ',' + s.pts[i+1][0] + ',' + s.pts[i+1][1] + ')');
+      for (const s of sts) seg(s, L);
     }
   }
   return L.join('\n');
@@ -1532,12 +1553,25 @@ function drawTracePreview(){
   tctx.drawImage(TR.img, 0, 0, W, H);
   tctx.globalAlpha = 1;
   tctx.lineCap = tctx.lineJoin = 'round';
-  tctx.lineWidth = 0.8;
-  for (const s of TR.strokes){
-    tctx.strokeStyle = TR.mode === 'mono' ? '#4FD8EB' : '#'+s.color;
+  tctx.lineWidth = 0.9;
+  const trace = sts => {
     tctx.beginPath();
-    s.pts.forEach((p,i) => i ? tctx.lineTo(p[0]+0.5,p[1]+0.5) : tctx.moveTo(p[0]+0.5,p[1]+0.5));
+    for (const s of sts){
+      tctx.moveTo(s.pts[0][0], s.pts[0][1]);
+      for (let i = 1; i < s.pts.length; i++) tctx.lineTo(s.pts[i][0], s.pts[i][1]);
+    }
     tctx.stroke();
+  };
+  if (TR.mode === 'mono'){
+    tctx.strokeStyle = '#4FD8EB';
+    trace(TR.strokes);
+  } else {
+    const groups = new Map();
+    for (const s of TR.strokes){
+      if (!groups.has(s.color)) groups.set(s.color, []);
+      groups.get(s.color).push(s);
+    }
+    for (const [color, sts] of groups){ tctx.strokeStyle = '#'+color; trace(sts); }
   }
 }
 
@@ -1549,9 +1583,7 @@ function setTStat(id, v){
 
 /* ---------- UI 바인딩 ---------- */
 const ta = $('src'), gutter = $('gutter'), logView = $('v-log');
-let errLine = -1, deb = null;
-let compileSeq = 0;
-let lastLines = -1, lastErrLine = -2;
+let errLine = -1, deb = null, compileSeq = 0, lastLines = -1, lastErrLine = -2;
 
 function log(kind, tag, msg){
   const t = new Date().toTimeString().slice(0,8);
@@ -1589,7 +1621,6 @@ function updateMeta(){
   const ln = upto.split('\n').length, col = pos - upto.lastIndexOf('\n');
   $('metaPos').textContent = 'Ln ' + ln + ', Col ' + col;
 }
-
 function renderTokens(tokens){
   const list = tokens.filter(t => t.type !== 'EOF');
   let h = list.slice(0, 800).map(t => {
@@ -1609,7 +1640,7 @@ function renderAST(ast){
   $('v-ast').innerHTML = '<pre>' + j + '</pre>';
 }
 function renderIR(ir){
-  const CAP = 2000;   // [fix] 대량 op에서 DOM 보호
+  const CAP = 2000;
   let html = ir.slice(0, CAP).map((o,i) => {
     const idx = String(i).padStart(2,'0');
     if (o.op === 'LINE')
@@ -1671,8 +1702,7 @@ async function compile(source, animate){
     log('ok','OK','컴파일 완료 — ' + gen.ir.length + ' ops · 루프 ' + gen.loops + '개 · ' + ms.toFixed(1) + 'ms');
     playIR(gen.ir, animate, () => {
       if (seq !== compileSeq) return;
-      setStage(3,'done');
-      setLED('ok');
+      setStage(3,'done'); setLED('ok');
       setStatus('OK · ' + gen.ir.length + ' ops · ' + ms.toFixed(1) + 'ms');
     });
   } catch (e){
@@ -1721,8 +1751,6 @@ document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () =>
   document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); $('v-' + b.dataset.v).classList.add('on');
 }));
-
-/* IR hover → 캔버스 하이라이트 */
 $('v-ir').addEventListener('mouseover', e => {
   const row = e.target.closest('.ir-line');
   if (!row || isPlaying || !currentIR || !currentIR.length) return;
@@ -1740,7 +1768,6 @@ $('v-ir').addEventListener('mouseover', e => {
 });
 $('v-ir').addEventListener('mouseleave', () => { if (!isPlaying) drawStatic(); });
 
-/* 내보내기 */
 function download(name, text, mime){
   const url = URL.createObjectURL(new Blob([text], {type: mime}));
   const a = Object.assign(document.createElement('a'), {href: url, download: name});
@@ -1750,9 +1777,7 @@ function download(name, text, mime){
 $('dljvg').addEventListener('click', () => download('drawing.jvg', ta.value, 'text/plain;charset=utf-8'));
 $('dlir').addEventListener('click', () => {
   if (!currentIR || !currentIR.length) return;
-  download('drawing.ir.json',
-    JSON.stringify({ format:'JVG-IR', spec:'1.0', ops: currentIR }, null, 2),
-    'application/json');
+  download('drawing.ir.json', JSON.stringify({ format:'JVG-IR', ops: currentIR }, null, 2), 'application/json');
 });
 
 /* ---------- TRACER 이벤트 ---------- */
@@ -1761,32 +1786,28 @@ $('trcClose').addEventListener('click', closeTracer);
 $('trcCancel').addEventListener('click', closeTracer);
 $('trcBack').addEventListener('click', e => { if (e.target === $('trcBack')) closeTracer(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTracer(); });
-
 dz.addEventListener('click', () => $('trcFile').click());
-$('trcFile').addEventListener('change', e => {
-  loadFile(e.target.files[0]);
-  e.target.value = '';   // [fix] 같은 파일 다시 선택 가능
-});
+$('trcFile').addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; });
 ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
 ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
 dz.addEventListener('drop', e => loadFile(e.dataTransfer.files[0]));
-
 document.addEventListener('paste', e => {
   const cd = e.clipboardData;
   if (!cd || !cd.items) return;
-  for (let k = 0; k < cd.items.length; k++){   // [fix] 인덱스 순회 (구형 사파리 호환)
+  for (let k = 0; k < cd.items.length; k++){
     const it = cd.items[k];
     if (it && it.type && it.type.startsWith('image/')){ openTracer(); loadFile(it.getAsFile()); break; }
   }
 });
-
 let trcDeb = null;
-['cDetail','cThresh','cMin','cSimp'].forEach(id => $(id).addEventListener('input', () => {
+['cDetail','cThresh','cMin','cSimp','cDenoise','cSmooth'].forEach(id => $(id).addEventListener('input', () => {
   $('vDetail').textContent = $('cDetail').value;
   $('vThresh').textContent = $('cThresh').value;
+  $('vDenoise').textContent = $('cDenoise').value;
   $('vMin').textContent = $('cMin').value;
+  $('vSmooth').textContent = $('cSmooth').value;
   $('vSimp').textContent = (+$('cSimp').value).toFixed(1);
-  clearTimeout(trcDeb); trcDeb = setTimeout(runTrace, 110);
+  clearTimeout(trcDeb); trcDeb = setTimeout(runTrace, 150);
 }));
 $('modeSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
   $('modeSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
@@ -1796,7 +1817,6 @@ $('modeSeg').querySelectorAll('button').forEach(b => b.addEventListener('click',
   runTrace();
 }));
 $('cSkipWhite').addEventListener('change', runTrace);
-
 $('trcInsert').addEventListener('click', () => {
   if (!TR.strokes.length) return;
   ta.value = buildJVG(TR.strokes);
@@ -1823,13 +1843,11 @@ document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () =
   compile(ta.value, true);
 }));
 
-/* ---------- 리사이즈 ---------- */
 new ResizeObserver(() => {
   sizeCanvas();
   if (!isPlaying) drawStatic();
 }).observe(wrap);
 
-/* ---------- 초기 실행 ---------- */
 sizeCanvas();
 ta.value = SAMPLES.house;
 document.querySelector('.chip[data-s="house"]').classList.add('on');
