@@ -532,34 +532,27 @@ IR 예시 (빠른 시작의 사각형을 컴파일한 결과):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#071829; --panel:#0C2440; --panel2:#0A1F36;
-  --line:#1C4368; --line-soft:#143452;
-  --ink:#D9EAF8; --mut:#6E93B8; --dim:#41678C;
-  --cyan:#4FD8EB; --amber:#FFB454; --green:#5CE0A5; --red:#FF6B7A; --yellow:#FFD23F;
-  --mono:'JetBrains Mono','IBM Plex Sans KR',monospace;
-  --disp:'Chakra Petch','IBM Plex Sans KR',sans-serif;
-}
+:root{--bg:#071829;--panel:#0C2440;--panel2:#0A1F36;--line:#1C4368;--line-soft:#143452;--ink:#D9EAF8;--mut:#6E93B8;--dim:#41678C;
+--cyan:#4FD8EB;--amber:#FFB454;--green:#5CE0A5;--red:#FF6B7A;--yellow:#FFD23F;
+--mono:'JetBrains Mono','IBM Plex Sans KR',monospace;--disp:'Chakra Petch','IBM Plex Sans KR',sans-serif;}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;color:var(--ink);font-family:'IBM Plex Sans KR',sans-serif;background:
-  radial-gradient(900px 520px at 88% -12%, rgba(79,216,235,.09), transparent 60%),
-  radial-gradient(760px 520px at -8% 112%, rgba(255,180,84,.07), transparent 60%),var(--bg);}
+ radial-gradient(900px 520px at 88% -12%,rgba(79,216,235,.09),transparent 60%),
+ radial-gradient(760px 520px at -8% 112%,rgba(255,180,84,.07),transparent 60%),var(--bg);}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:
-  linear-gradient(rgba(79,216,235,.028) 1px,transparent 1px) 0 0/44px 44px,
-  linear-gradient(90deg,rgba(79,216,235,.028) 1px,transparent 1px) 0 0/44px 44px;}
+ linear-gradient(rgba(79,216,235,.028) 1px,transparent 1px) 0 0/44px 44px,
+ linear-gradient(90deg,rgba(79,216,235,.028) 1px,transparent 1px) 0 0/44px 44px;}
 ::selection{background:rgba(79,216,235,.28)}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:#1B3E60;border-radius:5px;border:2px solid var(--panel2)}
 ::-webkit-scrollbar-track{background:transparent}
 .app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
-
 .top{display:flex;align-items:center;gap:14px;padding:11px 18px;flex:0 0 auto;border-bottom:1px solid var(--line-soft);
-  background:linear-gradient(180deg,rgba(13,38,66,.92),rgba(9,26,46,.92));}
+ background:linear-gradient(180deg,rgba(13,38,66,.92),rgba(9,26,46,.92));}
 .logo svg{display:block}
 .logo .lp{stroke-dasharray:60;stroke-dashoffset:60;animation:dash 3.4s ease-in-out infinite alternate}
-.logo .nd{animation:ndpulse 2.2s ease-in-out infinite}
-.logo .nd2{animation-delay:1.1s}
+.logo .nd{animation:ndpulse 2.2s ease-in-out infinite}.logo .nd2{animation-delay:1.1s}
 @keyframes dash{to{stroke-dashoffset:0}}
 @keyframes ndpulse{0%,100%{opacity:.45}50%{opacity:1}}
 .brand h1{margin:0;font:700 25px/1 var(--disp);letter-spacing:.05em}
@@ -573,11 +566,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .led.busy{background:var(--amber);box-shadow:0 0 9px rgba(255,180,84,.7);animation:ledp .55s infinite alternate}
 .led.err{background:var(--red);box-shadow:0 0 9px rgba(255,107,122,.7)}
 @keyframes ledp{from{opacity:.35}to{opacity:1}}
-
 .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(350px,440px) 1fr;gap:14px;padding:14px 18px 0}
-.panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;
-  background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:10px;
-  box-shadow:0 12px 34px rgba(2,10,20,.5);animation:rise .55s cubic-bezier(.2,.7,.3,1) both}
+.panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;background:linear-gradient(180deg,var(--panel),var(--panel2));
+ border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 34px rgba(2,10,20,.5);
+ animation:rise .55s cubic-bezier(.2,.7,.3,1) both;transition:box-shadow .4s,border-color .4s}
+.panel.glow{border-color:rgba(92,224,165,.7);box-shadow:0 0 0 2px rgba(92,224,165,.55),0 12px 34px rgba(2,10,20,.5)}
 .stage-panel{animation-delay:.07s}
 .pipe{margin:14px 18px 12px;height:224px;flex:0 0 auto;animation-delay:.14s}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -586,54 +579,53 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .ph h2{margin:0;font:600 11px var(--disp);letter-spacing:.2em;color:var(--ink)}
 .ph .sub{font:400 10px var(--mono);color:var(--dim)}
 .ph .right{margin-left:auto;display:flex;align-items:center;gap:8px}
-
 .ed{flex:1;display:flex;min-height:0;font:400 13px/22px var(--mono)}
 .gutter{width:46px;padding:12px 8px 60px 0;text-align:right;color:var(--dim);overflow:hidden;user-select:none;
-  background:rgba(7,24,41,.55);border-right:1px solid var(--line-soft);font-size:11px;line-height:22px}
+ background:rgba(7,24,41,.55);border-right:1px solid var(--line-soft);font-size:11px;line-height:22px}
 .gutter span{display:block}
 .gutter span.err{color:var(--red);font-weight:700;text-shadow:0 0 7px rgba(255,107,122,.55)}
-textarea{flex:1;background:transparent;border:0;outline:0;resize:none;color:var(--ink);
-  font:inherit;padding:12px 14px;caret-color:var(--amber);white-space:pre;overflow:auto;tab-size:2}
+textarea{flex:1;background:transparent;border:0;outline:0;resize:none;color:var(--ink);font:inherit;
+ padding:12px 14px;caret-color:var(--amber);white-space:pre;overflow:auto;tab-size:2}
 textarea::selection{background:rgba(79,216,235,.25)}
 .ef{display:flex;align-items:center;gap:10px;padding:7px 12px;flex:0 0 auto;flex-wrap:wrap;
-  border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim)}
-.ef .hint{margin-left:auto;letter-spacing:.05em}
-.ef .hint b{color:var(--amber);font-weight:700}
+ border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim)}
+.ef .hint{margin-left:auto;letter-spacing:.05em}.ef .hint b{color:var(--amber);font-weight:700}
 .chip{font:500 10px var(--mono);color:var(--mut);border:1px solid var(--line);padding:4px 8px;border-radius:4px;
-  background:transparent;cursor:pointer;transition:.18s;letter-spacing:.03em}
+ background:transparent;cursor:pointer;transition:.18s;letter-spacing:.03em}
 .chip:hover{color:#062036;background:var(--cyan);border-color:var(--cyan);transform:translateY(-1px);box-shadow:0 4px 12px rgba(79,216,235,.35)}
 .chip.on{color:var(--cyan);border-color:rgba(79,216,235,.55);background:rgba(79,216,235,.07)}
 .btn{font:700 11px var(--disp);letter-spacing:.14em;padding:8px 14px;border-radius:6px;border:1px solid transparent;
-  cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:6px}
+ cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:6px}
 .btn-p{background:var(--amber);color:#241305;box-shadow:0 2px 12px rgba(255,180,84,.28)}
 .btn-p:hover{transform:translateY(-1px);background:#FFC67E;box-shadow:0 7px 20px rgba(255,180,84,.42)}
 .btn-p:active{transform:translateY(0)}
+.btn-p.dis{background:#33547A;color:#7E9FBE;box-shadow:none}
+.btn-p.dis:hover{transform:none;background:#33547A}
 .btn-g{background:transparent;color:var(--mut);border-color:var(--line)}
 .btn-g:hover{color:var(--cyan);border-color:rgba(79,216,235,.5);transform:translateY(-1px)}
 .btn-s{padding:5px 9px;font-size:10px;letter-spacing:.1em}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.shake{animation:shake .22s}
 .tgl{display:flex;align-items:center;gap:6px;font:500 10px var(--mono);color:var(--mut);cursor:pointer}
 .tgl input{display:none}
 .tgl i{width:26px;height:14px;border-radius:8px;background:var(--line);position:relative;transition:.2s;flex:0 0 auto}
 .tgl i::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;background:var(--mut);top:2px;left:2px;transition:.2s}
 .tgl input:checked+i{background:rgba(92,224,165,.35)}
 .tgl input:checked+i::after{left:14px;background:var(--green)}
-
 .stage{flex:1;position:relative;min-height:0;background:
-  linear-gradient(rgba(79,216,235,.05) 1px,transparent 1px) 0 0/16px 16px,
-  linear-gradient(90deg,rgba(79,216,235,.05) 1px,transparent 1px) 0 0/16px 16px,
-  linear-gradient(rgba(79,216,235,.10) 1px,transparent 1px) 0 0/80px 80px,
-  linear-gradient(90deg,rgba(79,216,235,.10) 1px,transparent 1px) 0 0/80px 80px,#08203A}
+ linear-gradient(rgba(79,216,235,.05) 1px,transparent 1px) 0 0/16px 16px,
+ linear-gradient(90deg,rgba(79,216,235,.05) 1px,transparent 1px) 0 0/16px 16px,
+ linear-gradient(rgba(79,216,235,.10) 1px,transparent 1px) 0 0/80px 80px,
+ linear-gradient(90deg,rgba(79,216,235,.10) 1px,transparent 1px) 0 0/80px 80px,#08203A}
 .stage canvas{position:absolute;inset:0;display:block}
 .corner{position:absolute;width:14px;height:14px;border:1.5px solid rgba(79,216,235,.4);pointer-events:none}
-.c1{top:8px;left:8px;border-right:0;border-bottom:0}
-.c2{top:8px;right:8px;border-left:0;border-bottom:0}
-.c3{bottom:8px;left:8px;border-right:0;border-top:0}
-.c4{bottom:8px;right:8px;border-left:0;border-top:0}
+.c1{top:8px;left:8px;border-right:0;border-bottom:0}.c2{top:8px;right:8px;border-left:0;border-bottom:0}
+.c3{bottom:8px;left:8px;border-right:0;border-top:0}.c4{bottom:8px;right:8px;border-left:0;border-top:0}
 .progress{position:absolute;left:0;top:0;height:2px;width:100%;background:rgba(79,216,235,.12)}
 .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));
-  box-shadow:0 0 9px rgba(79,216,235,.75);transition:width .09s linear}
-.stage-note{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  font:500 12px var(--mono);color:var(--dim);letter-spacing:.1em;text-align:center;pointer-events:none}
+ box-shadow:0 0 9px rgba(79,216,235,.75);transition:width .09s linear}
+.stage-note{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:500 12px var(--mono);
+ color:var(--dim);letter-spacing:.1em;text-align:center;pointer-events:none}
 .stage-note.err{color:var(--red)}
 .stats{display:grid;grid-template-columns:repeat(6,1fr);flex:0 0 auto;border-top:1px solid var(--line-soft)}
 .stat{padding:8px 12px;border-right:1px solid var(--line-soft)}
@@ -643,10 +635,9 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .stat span{font:600 8.5px var(--disp);letter-spacing:.18em;color:var(--dim)}
 .stat.flash{animation:flash .55s}
 @keyframes flash{0%{background:rgba(79,216,235,.16)}100%{background:transparent}}
-
 .stages{display:flex;align-items:center;gap:7px;margin-left:18px}
 .stg{display:flex;align-items:center;gap:6px;font:600 9.5px var(--disp);letter-spacing:.12em;color:var(--dim);
-  padding:4px 9px;border:1px solid var(--line-soft);border-radius:5px;transition:.25s}
+ padding:4px 9px;border:1px solid var(--line-soft);border-radius:5px;transition:.25s}
 .stg i{font-style:normal;width:13px;height:13px;border:1px solid currentColor;border-radius:3px;display:grid;place-items:center;font-size:8px}
 .stg.active{color:var(--amber);border-color:rgba(255,180,84,.6);box-shadow:0 0 13px rgba(255,180,84,.28);animation:ledp .6s infinite alternate}
 .stg.done{color:var(--green);border-color:rgba(92,224,165,.45)}
@@ -654,7 +645,7 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .arr{color:var(--dim);font-size:10px}
 .tabs{display:flex;gap:2px}
 .tab{font:600 10px var(--disp);letter-spacing:.14em;color:var(--mut);background:none;border:none;
-  border-bottom:2px solid transparent;padding:6px 9px;cursor:pointer;transition:.18s}
+ border-bottom:2px solid transparent;padding:6px 9px;cursor:pointer;transition:.18s}
 .tab:hover{color:var(--ink)}
 .tab.on{color:var(--cyan);border-bottom-color:var(--cyan)}
 .views{flex:1;min-height:0;position:relative}
@@ -666,12 +657,12 @@ textarea::selection{background:rgba(79,216,235,.25)}
 .tk-num{color:var(--green);border-color:rgba(92,224,165,.3);background:rgba(92,224,165,.06)}
 .tk-pun{color:var(--dim)}
 .view pre{margin:0;font:inherit}
-.j-key{color:var(--cyan)} .j-str{color:var(--amber)} .j-num{color:var(--green)}
+.j-key{color:var(--cyan)}.j-str{color:var(--amber)}.j-num{color:var(--green)}
 .ir-line{display:flex;gap:12px;padding:1.5px 4px;align-items:baseline;white-space:nowrap;border-radius:3px;transition:background .12s}
 .ir-line:hover{background:rgba(79,216,235,.10)}
 .ir-i{color:var(--dim);width:20px;flex:0 0 auto}
 .ir-op{font-weight:700;width:42px;flex:0 0 auto}
-.op-line{color:var(--cyan)} .op-fill{color:var(--amber)}
+.op-line{color:var(--cyan)}.op-fill{color:var(--amber)}
 .ir-args{color:var(--ink)}
 .ir-meta{color:var(--mut);display:flex;align-items:center;gap:5px}
 .ir-meta i{width:9px;height:9px;border-radius:2px;display:inline-block;border:1px solid rgba(255,255,255,.28)}
@@ -679,34 +670,33 @@ textarea::selection{background:rgba(79,216,235,.25)}
 @keyframes login{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
 .log-t{color:var(--dim);font-size:10px;flex:0 0 auto}
 .log-tag{font-weight:700;font-size:9.5px;letter-spacing:.12em;width:46px;flex:0 0 auto}
-.tag-ok{color:var(--green)} .tag-warn{color:var(--amber)} .tag-err{color:var(--red)}
-.tag-info{color:var(--cyan)} .tag-state{color:var(--yellow)}
+.tag-ok{color:var(--green)}.tag-warn{color:var(--amber)}.tag-err{color:var(--red)}
+.tag-info{color:var(--cyan)}.tag-state{color:var(--yellow)}
 .log-m{color:var(--ink)}
-.log-e.warn .log-m{color:#FFD9A8} .log-e.err .log-m{color:#FFC2CA}
+.log-e.warn .log-m{color:#FFD9A8}.log-e.err .log-m{color:#FFC2CA}
 .foot{display:flex;justify-content:space-between;gap:12px;padding:8px 18px;flex:0 0 auto;
-  border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim);letter-spacing:.05em;flex-wrap:wrap}
+ border-top:1px solid var(--line-soft);font:400 10px var(--mono);color:var(--dim);letter-spacing:.05em;flex-wrap:wrap}
 .foot b{color:var(--mut);font-weight:500}
-
 .trc-back{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
-  background:rgba(4,14,26,.74);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+ background:rgba(4,14,26,.74);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 .trc-back.open{display:flex;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0}}
-.trc-panel{width:min(880px,94vw);height:min(580px,92vh);display:flex;flex-direction:column;
-  background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;
-  box-shadow:0 30px 80px rgba(0,0,0,.6);animation:popIn .3s cubic-bezier(.2,.9,.3,1.15)}
+.trc-panel{width:min(880px,94vw);height:min(600px,92vh);display:flex;flex-direction:column;
+ background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;
+ box-shadow:0 30px 80px rgba(0,0,0,.6);animation:popIn .3s cubic-bezier(.2,.9,.3,1.15)}
 @keyframes popIn{from{opacity:0;transform:translateY(18px) scale(.96)}}
 .trc-body{flex:1;min-height:0;display:grid;grid-template-columns:1.25fr .9fr;gap:14px;padding:14px}
 .trc-left{display:flex;flex-direction:column;min-height:0;gap:10px}
 .trc-right{display:flex;flex-direction:column;min-height:0;overflow:auto;padding-right:2px}
-.dropzone{position:relative;flex:1;min-height:200px;border:1.5px dashed var(--line);border-radius:8px;overflow:hidden;
-  cursor:pointer;transition:.2s;background:
-  linear-gradient(rgba(79,216,235,.04) 1px,transparent 1px) 0 0/14px 14px,
-  linear-gradient(90deg,rgba(79,216,235,.04) 1px,transparent 1px) 0 0/14px 14px,#08203A}
+.dropzone{position:relative;flex:1;min-height:190px;border:1.5px dashed var(--line);border-radius:8px;overflow:hidden;
+ cursor:pointer;transition:.2s;background:
+ linear-gradient(rgba(79,216,235,.04) 1px,transparent 1px) 0 0/14px 14px,
+ linear-gradient(90deg,rgba(79,216,235,.04) 1px,transparent 1px) 0 0/14px 14px,#08203A}
 .dropzone:hover{border-color:rgba(79,216,235,.5)}
-.dropzone.over{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,180,84,.16), inset 0 0 40px rgba(255,180,84,.07)}
+.dropzone.over{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,180,84,.16),inset 0 0 40px rgba(255,180,84,.07)}
 .dropzone.has-img{border-style:solid;border-color:var(--line)}
 .dz-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  color:var(--dim);transition:.25s;text-align:center;padding:10px}
+ color:var(--dim);transition:.25s;text-align:center;padding:10px}
 .dz-inner p{margin:0;font:500 12px var(--mono);color:var(--mut)}
 .dz-ico{font-size:36px;color:var(--cyan);animation:dzfloat 2.6s ease-in-out infinite;line-height:1}
 @keyframes dzfloat{0%,100%{transform:translateY(-4px)}50%{transform:translateY(4px)}}
@@ -715,49 +705,45 @@ textarea::selection{background:rgba(79,216,235,.25)}
 #trcCv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none}
 .dropzone.has-img #trcCv{display:block}
 .trc-stats{display:flex;flex:0 0 auto;border:1px solid var(--line-soft);border-radius:6px;overflow:hidden}
-.trc-stats span{flex:1;padding:6px 4px;text-align:center;font:600 7.5px var(--disp);letter-spacing:.12em;color:var(--dim);
-  border-right:1px solid var(--line-soft);background:rgba(7,24,41,.4)}
+.trc-stats span{flex:1;padding:6px 4px;text-align:center;font:600 7.5px var(--disp);letter-spacing:.1em;color:var(--dim);
+ border-right:1px solid var(--line-soft);background:rgba(7,24,41,.4)}
 .trc-stats span:last-child{border-right:0}
-.trc-stats b{display:block;font:700 13px/1.2 var(--disp);color:var(--cyan)}
+.trc-stats b{display:block;font:700 12.5px/1.2 var(--disp);color:var(--cyan)}
 .trc-stats span:nth-child(even) b{color:var(--amber)}
-.ctl{display:block;font:500 10.5px var(--mono);color:var(--mut);margin-bottom:12px}
+.ctl{display:block;font:500 10.5px var(--mono);color:var(--mut);margin-bottom:11px;transition:opacity .25s}
+.ctl.off{opacity:.28;pointer-events:none}
 .ctl b{color:var(--cyan);float:right;font-weight:700}
 .ctl input[type=range]{width:100%;margin-top:7px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
-  background:var(--line);outline:none;cursor:pointer}
+ background:var(--line);outline:none;cursor:pointer}
 .ctl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;
-  background:var(--amber);border:2px solid #241305;box-shadow:0 0 8px rgba(255,180,84,.5);transition:transform .15s}
+ background:var(--amber);border:2px solid #241305;box-shadow:0 0 8px rgba(255,180,84,.5);transition:transform .15s}
 .ctl input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25)}
 .ctl input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--amber);
-  border:2px solid #241305;box-shadow:0 0 8px rgba(255,180,84,.5)}
+ border:2px solid #241305;box-shadow:0 0 8px rgba(255,180,84,.5)}
 .trc-hint{font:400 9.5px/1.7 var(--mono);color:var(--dim);margin:2px 0 10px;padding:8px 10px;
-  border-left:2px solid var(--line);background:rgba(79,216,235,.04);border-radius:0 4px 4px 0}
+ border-left:2px solid var(--line);background:rgba(79,216,235,.04);border-radius:0 4px 4px 0}
 .ctl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 12px}
 .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.seg button{font:600 10px var(--disp);letter-spacing:.1em;padding:6px 13px;background:transparent;color:var(--mut);
-  border:0;cursor:pointer;transition:.18s}
+.seg button{font:600 9.5px var(--disp);letter-spacing:.08em;padding:6px 10px;background:transparent;color:var(--mut);
+ border:0;cursor:pointer;transition:.18s}
 .seg button.on{background:var(--cyan);color:#062036}
 .seg button:not(.on):hover{color:var(--ink)}
 .trc-foot{margin-top:auto;display:flex;justify-content:flex-end;gap:8px;padding-top:12px}
-
 @media(max-width:1020px){
-  .app{height:auto;min-height:100vh}
-  .main{grid-template-columns:1fr}
-  .editor-panel{height:430px}
-  .stage-panel{height:520px}
-  .pipe{height:300px}
-  .stats{grid-template-columns:repeat(3,1fr)}
-  .stat:nth-child(3){border-right:0}
-  .stages{margin-left:0}
-  .ph{flex-wrap:wrap;height:auto;padding:8px 12px;row-gap:6px}
-  .trc-body{grid-template-columns:1fr;overflow:auto}
-  .trc-panel{height:auto;max-height:94vh}
-  .dropzone{min-height:240px}
+ .app{height:auto;min-height:100vh}
+ .main{grid-template-columns:1fr}
+ .editor-panel{height:430px}.stage-panel{height:520px}.pipe{height:300px}
+ .stats{grid-template-columns:repeat(3,1fr)}.stat:nth-child(3){border-right:0}
+ .stages{margin-left:0}
+ .ph{flex-wrap:wrap;height:auto;padding:8px 12px;row-gap:6px}
+ .trc-body{grid-template-columns:1fr;overflow:auto}
+ .trc-panel{height:auto;max-height:94vh}
+ .dropzone{min-height:240px}
 }
 </style>
 </head>
 <body>
 <div class="app">
-
   <header class="top">
     <div class="logo" aria-hidden="true">
       <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -866,12 +852,11 @@ textarea::selection{background:rgba(79,216,235,.25)}
   </footer>
 </div>
 
-<!-- ===== TRACER MODAL ===== -->
 <div class="trc-back" id="trcBack">
   <div class="trc-panel">
     <div class="ph">
       <span class="dot" style="background:var(--yellow);box-shadow:0 0 8px rgba(255,210,63,.6)"></span>
-      <h2>TRACE</h2><span class="sub">PNG · JPEG → JVG · Gaussian → Sobel → NMS → Hysteresis → Sub-pixel</span>
+      <h2>TRACE</h2><span class="sub">PNG · JPEG → JVG · 스캔라인(무손실) / 엣지(Canny)</span>
       <div class="right"><button class="btn btn-g btn-s" id="trcClose">✕ 닫기</button></div>
     </div>
     <div class="trc-body">
@@ -886,7 +871,7 @@ textarea::selection{background:rgba(79,216,235,.25)}
           <input type="file" id="trcFile" accept="image/*" hidden>
         </div>
         <div class="trc-stats">
-          <span><b id="tsPx">–</b>EDGE PX</span>
+          <span><b id="tsPx">–</b>PIXELS</span>
           <span><b id="tsStroke">–</b>STROKES</span>
           <span><b id="tsCmd">–</b>LINE CMD</span>
           <span><b id="tsByte">–</b>BYTES</span>
@@ -894,8 +879,19 @@ textarea::selection{background:rgba(79,216,235,.25)}
         </div>
       </div>
       <div class="trc-right">
+        <div class="ctl-row">
+          <div class="seg" id="modeSeg">
+            <button data-m="scan" class="on">스캔라인</button>
+            <button data-m="mono">엣지 모노</button>
+            <button data-m="color">엣지 컬러</button>
+          </div>
+          <label class="tgl" id="skipWhiteWrap"><input type="checkbox" id="cSkipWhite" checked><i></i>흰 배경 제외</label>
+        </div>
         <label class="ctl">해상도 (긴 변) <b id="vDetail">480</b>px
           <input type="range" id="cDetail" min="160" max="800" step="20" value="480">
+        </label>
+        <label class="ctl">색상 병합 허용오차 <b id="vTol">16</b>
+          <input type="range" id="cTol" min="0" max="60" step="2" value="16">
         </label>
         <label class="ctl">엣지 임계값 <b id="vThresh">50</b>
           <input type="range" id="cThresh" min="8" max="200" step="2" value="50">
@@ -912,14 +908,7 @@ textarea::selection{background:rgba(79,216,235,.25)}
         <label class="ctl">단순화 (RDP) <b id="vSimp">0.8</b>
           <input type="range" id="cSimp" min="0" max="3" step="0.1" value="0.8">
         </label>
-        <p class="trc-hint">선명한 로고 → 임계값 ↓ &nbsp;·&nbsp; 노이즈 많은 사진 → 노이즈 제거 ↑ &nbsp;·&nbsp; 부드러운 곡선 → 스무딩 ↑</p>
-        <div class="ctl-row">
-          <div class="seg" id="modeSeg">
-            <button data-m="mono" class="on">모노</button>
-            <button data-m="color">컬러</button>
-          </div>
-          <label class="tgl" id="skipWhiteWrap"><input type="checkbox" id="cSkipWhite" checked><i></i>흰 배경 제외</label>
-        </div>
+        <p class="trc-hint">스캔라인: 허용오차 <b style="color:var(--cyan)">0</b> = 원본 무손실 · 값↑ = 코드 크기↓ &nbsp;|&nbsp; 엣지: 임계값↓ 로고 · 노이즈 제거↑ 사진</p>
         <div class="trc-foot">
           <button class="btn btn-g" id="trcCancel">취소</button>
           <button class="btn btn-p" id="trcInsert">에디터에 삽입 ▶</button>
@@ -930,30 +919,26 @@ textarea::selection{background:rgba(79,216,235,.25)}
 </div>
 
 <script>
-/* JVG Compiler — LEXER → PARSER → CODEGEN → RENDER + IMG TRACER */
+/* JVG Compiler — LEXER → PARSER → CODEGEN → RENDER + IMG TRACER (스캔라인/엣지) */
 'use strict';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-class JvgError extends Error {
-  constructor(msg, line, col){ super(msg); this.line = line; this.col = col; }
-}
+class JvgError extends Error { constructor(msg,line,col){ super(msg); this.line=line; this.col=col; } }
 
-/* ---------- 1. LEXER ---------- */
+/* ---------- LEXER ---------- */
 function lex(src){
-  const tokens = [];
-  let i = 0, line = 1, col = 1;
-  const push = (type, value, l, c) => tokens.push({type, value, line:l, col:c});
+  const tokens = []; let i = 0, line = 1, col = 1;
+  const push = (type,value,l,c) => tokens.push({type,value,line:l,col:c});
   while (i < src.length){
     const ch = src[i];
-    if (ch === '\n'){ line++; col = 1; i++; continue; }
+    if (ch === '\n'){ line++; col=1; i++; continue; }
     if (/\s/.test(ch)){ i++; col++; continue; }
     if (ch === '('){ push('LPAREN','(',line,col); i++; col++; continue; }
     if (ch === ')'){ push('RPAREN',')',line,col); i++; col++; continue; }
     if (ch === ','){ push('COMMA',',',line,col); i++; col++; continue; }
     if (ch === '"'){
-      const l = line, c = col; i++; col++;
-      let s = '';
+      const l=line,c=col; i++; col++; let s='';
       while (i < src.length && src[i] !== '"'){
         if (src[i] === '\n') throw new JvgError('닫히지 않은 문자열입니다', l, c);
         s += src[i]; i++; col++;
@@ -962,16 +947,16 @@ function lex(src){
       i++; col++; push('STRING', s, l, c); continue;
     }
     if (/[A-Za-z_]/.test(ch)){
-      const l = line, c = col; let s = '';
+      const l=line,c=col; let s='';
       while (i < src.length && /[A-Za-z_0-9]/.test(src[i])){ s += src[i]; i++; col++; }
       push('IDENT', s, l, c); continue;
     }
     if (ch === '-' || /[0-9]/.test(ch)){
-      const l = line, c = col; let s = '';
+      const l=line,c=col; let s='';
       if (src[i] === '-'){ s += '-'; i++; col++; }
-      let digits = false, dot = false;
+      let digits=false, dot=false;
       while (i < src.length && (/[0-9]/.test(src[i]) || (src[i] === '.' && !dot))){
-        if (src[i] === '.') dot = true; else digits = true;
+        if (src[i] === '.') dot=true; else digits=true;
         s += src[i]; i++; col++;
       }
       if (!digits) throw new JvgError('잘못된 숫자 "' + s + '"', l, c);
@@ -983,17 +968,14 @@ function lex(src){
   return tokens;
 }
 
-/* ---------- 2. PARSER ---------- */
-const SIG = { JVG:['string'], Color:['string'], Weight:['number'],
-  Line:['number','number','number','number'], Fill:[] };
+/* ---------- PARSER ---------- */
+const SIG = { JVG:['string'], Color:['string'], Weight:['number'], Line:['number','number','number','number'], Fill:[] };
 function parse(tokens){
-  const ast = [];
-  let p = 0;
+  const ast = []; let p = 0;
   const peek = () => tokens[p], next = () => tokens[p++];
   const expect = type => {
     const t = next();
-    if (t.type !== type)
-      throw new JvgError(type + '가 필요한 위치에 ' + t.type + '("' + (t.value ?? '') + '")가 있습니다', t.line, t.col);
+    if (t.type !== type) throw new JvgError(type + '가 필요한 위치에 ' + t.type + '("' + (t.value ?? '') + '")가 있습니다', t.line, t.col);
     return t;
   };
   while (peek().type !== 'EOF'){
@@ -1007,38 +989,31 @@ function parse(tokens){
         const t = next();
         const want = sig[args.length];
         if (want === undefined) throw new JvgError(id.value + '() 인자가 너무 많습니다', t.line, t.col);
-        if (want === 'string' && t.type !== 'STRING')
-          throw new JvgError(id.value + '()의 ' + (args.length+1) + '번째 인자는 문자열이어야 합니다', t.line, t.col);
-        if (want === 'number' && t.type !== 'NUMBER')
-          throw new JvgError(id.value + '()의 ' + (args.length+1) + '번째 인자는 숫자여야 합니다', t.line, t.col);
+        if (want === 'string' && t.type !== 'STRING') throw new JvgError(id.value + '()의 ' + (args.length+1) + '번째 인자는 문자열이어야 합니다', t.line, t.col);
+        if (want === 'number' && t.type !== 'NUMBER') throw new JvgError(id.value + '()의 ' + (args.length+1) + '번째 인자는 숫자여야 합니다', t.line, t.col);
         args.push(t.value);
         if (peek().type === 'COMMA'){ next(); continue; }
         break;
       }
     }
     expect('RPAREN');
-    if (args.length !== sig.length)
-      throw new JvgError(id.value + '()는 인자 ' + sig.length + '개가 필요합니다 (현재 ' + args.length + '개)', id.line, id.col);
+    if (args.length !== sig.length) throw new JvgError(id.value + '()는 인자 ' + sig.length + '개가 필요합니다 (현재 ' + args.length + '개)', id.line, id.col);
     ast.push({ cmd: id.value, args, line: id.line });
   }
   return ast;
 }
 
-/* ---------- 3. CODEGEN ---------- */
+/* ---------- CODEGEN ---------- */
 function codegen(ast, log){
-  if (!ast.length || ast[0].cmd !== 'JVG')
-    throw new JvgError('JVG("1.0") 헤더가 첫 번째 명령이어야 합니다', 1, 1);
-  if (ast[0].args[0] !== '1.0')
-    throw new JvgError('지원하지 않는 버전 "' + ast[0].args[0] + '"', ast[0].line, 1);
+  if (!ast.length || ast[0].cmd !== 'JVG') throw new JvgError('JVG("1.0") 헤더가 첫 번째 명령이어야 합니다', 1, 1);
+  if (ast[0].args[0] !== '1.0') throw new JvgError('지원하지 않는 버전 "' + ast[0].args[0] + '"', ast[0].line, 1);
   const close = (a,b) => Math.abs(a[0]-b[0]) < 1e-6 && Math.abs(a[1]-b[1]) < 1e-6;
-  const ir = [];
-  let color = 'FFFFFF', weight = 1, pending = [], loops = 0;
+  const ir = []; let color = 'FFFFFF', weight = 1, pending = [], loops = 0;
   for (const n of ast.slice(1)){
     if (n.cmd === 'JVG') throw new JvgError('JVG() 헤더는 중복될 수 없습니다 (첫 줄에만 허용)', n.line, 1);
     else if (n.cmd === 'Color'){
       const hex = n.args[0];
-      if (!/^[0-9a-fA-F]{6}$/.test(hex))
-        throw new JvgError('잘못된 HEX 색상 "' + hex + '" — 6자리 HEX (예: "FF0000")', n.line, 1);
+      if (!/^[0-9a-fA-F]{6}$/.test(hex)) throw new JvgError('잘못된 HEX 색상 "' + hex + '" — 6자리 HEX (예: "FF0000")', n.line, 1);
       color = hex.toUpperCase();
       log('state','STATE','Color → #' + color + '  (line ' + n.line + ')');
     }
@@ -1055,28 +1030,21 @@ function codegen(ast, log){
     else if (n.cmd === 'Fill'){
       const res = extractLoops(pending, close);
       for (const lp of res.loops){
-        ir.push({ op:'FILL', pts: lp.pts, color });
-        loops++;
+        ir.push({ op:'FILL', pts: lp.pts, color }); loops++;
         log('ok','FILL','닫힌 루프 감지 (line ' + n.line + ') : ' + lp.segs + '개 선분 → polygon(' + lp.pts.length + ') #' + color);
       }
       const remain = pending.filter((_, i) => !res.usedMask[i]);
-      if (res.loops.length === 0 && pending.length === 0)
-        log('warn','WARN','Fill() (line ' + n.line + ') 무시 — 그려진 선분이 없습니다');
-      else if (res.loops.length === 0)
-        log('warn','WARN','Fill() (line ' + n.line + ') 무시 — 열린 경로 (선분 ' + pending.length + '개 미닫힘 · 유지됨)');
-      else if (remain.length > 0)
-        log('info','FILL','열린 선분 ' + remain.length + '개 유지 — 다음 Fill()에서 재판정');
+      if (res.loops.length === 0 && pending.length === 0) log('warn','WARN','Fill() (line ' + n.line + ') 무시 — 그려진 선분이 없습니다');
+      else if (res.loops.length === 0) log('warn','WARN','Fill() (line ' + n.line + ') 무시 — 열린 경로 (선분 ' + pending.length + '개 미닫힘 · 유지됨)');
+      else if (remain.length > 0) log('info','FILL','열린 선분 ' + remain.length + '개 유지 — 다음 Fill()에서 재판정');
       pending = remain;
     }
   }
   log('info','GEN','IR ' + ir.length + ' ops 방출 (색상·굵기 bake 완료)');
   return { ir, loops };
 }
-
 function extractLoops(segs, close){
-  const n = segs.length;
-  const used = new Array(n).fill(false);
-  const loops = [];
+  const n = segs.length, used = new Array(n).fill(false), loops = [];
   let progress = true, guard = 0, budget = 120000;
   while (progress && guard++ <= n){
     progress = false;
@@ -1101,35 +1069,29 @@ function extractLoops(segs, close){
         const pts = [segs[s].a.slice()];
         for (const idx of path) pts.push(segs[idx].b.slice());
         const clean = [pts[0]];
-        for (let k = 1; k < pts.length; k++)
-          if (!close(pts[k], clean[clean.length-1])) clean.push(pts[k]);
+        for (let k = 1; k < pts.length; k++) if (!close(pts[k], clean[clean.length-1])) clean.push(pts[k]);
         if (clean.length > 1 && close(clean[clean.length-1], clean[0])) clean.pop();
         if (clean.length >= 3){ loops.push({ pts: clean, segs: path.length }); progress = true; break; }
         for (const idx of path) used[idx] = false;
-      } else {
-        for (const idx of path) used[idx] = false;
-      }
+      } else { for (const idx of path) used[idx] = false; }
     }
   }
   return { loops, usedMask: used };
 }
 
-/* ---------- 4. RENDER (레이어 캐시) ---------- */
+/* ---------- RENDER (레이어 캐시) ---------- */
 const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('stageWrap');
 const layer = document.createElement('canvas'), lctx = layer.getContext('2d');
 let currentIR = null, animToken = 0, isPlaying = false;
 const R = { ir: null, bb: null, tf: null, done: -1 };
-
 function sizeCanvas(){
-  const r = wrap.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
+  const r = wrap.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
   cv.width = Math.max(1, Math.round(r.width * dpr));
   cv.height = Math.max(1, Math.round(r.height * dpr));
-  cv.style.width = r.width + 'px';
-  cv.style.height = r.height + 'px';
+  cv.style.width = r.width + 'px'; cv.style.height = r.height + 'px';
 }
 function bbox(ir){
-  let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
   for (const o of ir){
     if (o.op === 'LINE'){
       if (o.x1<x0)x0=o.x1; if (o.x2<x0)x0=o.x2; if (o.y1<y0)y0=o.y1; if (o.y2<y0)y0=o.y2;
@@ -1169,12 +1131,10 @@ function drawOp(c, o, p, tf){
     c.lineWidth = Math.max(0.6, o.weight*tf.s);
     c.beginPath(); c.moveTo(tx(o.x1),ty(o.y1)); c.lineTo(tx(ex),ty(ey)); c.stroke();
   } else {
-    c.globalAlpha = p;
-    c.fillStyle = '#'+o.color;
+    c.globalAlpha = p; c.fillStyle = '#'+o.color;
     c.beginPath();
     o.pts.forEach((pt,k)=> k ? c.lineTo(tx(pt[0]),ty(pt[1])) : c.moveTo(tx(pt[0]),ty(pt[1])));
-    c.closePath(); c.fill();
-    c.globalAlpha = 1;
+    c.closePath(); c.fill(); c.globalAlpha = 1;
   }
 }
 function bakeUpTo(idx){
@@ -1198,10 +1158,7 @@ function blitLayer(){
 function crosshair(x,y){
   ctx.save();
   ctx.strokeStyle = 'rgba(255,180,84,.95)'; ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(x-8,y); ctx.lineTo(x+8,y);
-  ctx.moveTo(x,y-8); ctx.lineTo(x,y+8);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-8,y); ctx.lineTo(x+8,y); ctx.moveTo(x,y-8); ctx.lineTo(x,y+8); ctx.stroke();
   ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.stroke();
   ctx.restore();
 }
@@ -1228,8 +1185,7 @@ function drawStatic(){
 function playIR(ir, animate, onDone){
   const token = ++animToken;
   const note = $('note'), prog = $('prog');
-  setIR(ir);
-  currentIR = ir;
+  setIR(ir); currentIR = ir;
   if (!ir.length){
     isPlaying = false; clearMain();
     note.textContent = '그리기 명령이 없습니다';
@@ -1245,7 +1201,7 @@ function playIR(ir, animate, onDone){
   }
   isPlaying = true;
   const total = ir.length;
-  const perOp = Math.min(150, Math.max(0.1, 1200/total));
+  const perOp = Math.min(150, Math.max(0.01, 1200/total));
   const t0 = performance.now();
   requestAnimationFrame(function frame(now){
     if (token !== animToken) return;
@@ -1259,44 +1215,65 @@ function playIR(ir, animate, onDone){
   });
 }
 
-/* ---------- 5. TRACER v2 (Canny 스타일 + 서브픽셀) ---------- */
-const TR = { img: null, W: 0, H: 0, strokes: [], mode: 'mono' };
+/* ---------- TRACER ---------- */
+const SCAN_BUDGET = 200000, EDGE_BUDGET = 25000;
+const TR = { img: null, W: 0, H: 0, strokes: [], runs: [], mode: 'scan' };
 const dz = $('dropzone');
 const trcCv = $('trcCv'), tctx = trcCv.getContext('2d');
 const pxCv = document.createElement('canvas');
 const pctx = pxCv.getContext('2d', { willReadFrequently: true });
-
 function openTracer(){ $('trcBack').classList.add('open'); }
 function closeTracer(){ $('trcBack').classList.remove('open'); }
-
 function loadFile(file){
   if (!file || !file.type.startsWith('image/')) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => { URL.revokeObjectURL(url); TR.img = img; dz.classList.add('has-img'); runTrace(); };
   img.onerror = () => {
-    URL.revokeObjectURL(url);
-    dz.classList.remove('has-img');
+    URL.revokeObjectURL(url); dz.classList.remove('has-img');
     const p = dz.querySelector('.dz-inner p');
-    p.textContent = '⚠ 이미지를 읽을 수 없습니다';
-    p.style.color = 'var(--red)';
+    p.textContent = '⚠ 이미지를 읽을 수 없습니다'; p.style.color = 'var(--red)';
     setTimeout(() => { p.textContent = '이미지를 여기에 놓거나 클릭'; p.style.color = ''; }, 2200);
   };
   img.src = url;
 }
 
-function gaussBlur(src, W, H){   // 3x3 분리형 가우시안 [1,2,1]
+/* 스캔라인: 행 단위 런 추출 — 허용오차 내 색 병합, tol=0이면 완전 보존 */
+function scanlineRuns(data, W, H, tol, skipWhite){
+  const runs = [];
+  const hexC = (r,g,b) => ((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1).toUpperCase();
+  for (let y = 0; y < H; y++){
+    let x = 0;
+    while (x < W){
+      const p = (y*W+x)*4;
+      if (data[p+3] < 128){ x++; continue; }
+      const br = data[p], bg = data[p+1], bb = data[p+2];
+      if (skipWhite && (0.299*br + 0.587*bg + 0.114*bb) > 225){ x++; continue; }
+      let x2 = x;
+      while (x2+1 < W){
+        const p2 = (y*W+x2+1)*4;
+        if (data[p2+3] < 128) break;
+        if (Math.abs(data[p2]-br) > tol || Math.abs(data[p2+1]-bg) > tol || Math.abs(data[p2+2]-bb) > tol) break;
+        x2++;
+      }
+      runs.push({ x1: x+0.5, y: y+0.5, x2: x2+0.5, color: hexC(br,bg,bb) });
+      x = x2+1;
+    }
+  }
+  return runs;
+}
+function gaussBlur(src, W, H){
   const tmp = new Float32Array(W*H), out = new Float32Array(W*H);
   for (let y = 0; y < H; y++){
     const row = y*W;
     for (let x = 0; x < W; x++){
-      const l = src[row + (x>0?x-1:0)], r = src[row + (x<W-1?x+1:x)], c = src[row+x];
+      const l = src[row+(x>0?x-1:0)], r = src[row+(x<W-1?x+1:x)], c = src[row+x];
       tmp[row+x] = (l + 2*c + r) * 0.25;
     }
   }
   for (let y = 0; y < H; y++){
     for (let x = 0; x < W; x++){
-      const u = tmp[(y>0?y-1:0)*W + x], d = tmp[(y<H-1?y+1:y)*W + x], c = tmp[y*W+x];
+      const u = tmp[(y>0?y-1:0)*W+x], d = tmp[(y<H-1?y+1:y)*W+x], c = tmp[y*W+x];
       out[y*W+x] = (u + 2*c + d) * 0.25;
     }
   }
@@ -1309,41 +1286,49 @@ function runTrace(){
   if (!iw || !ih) return;
   const t0 = performance.now();
   const detail=+$('cDetail').value, thresh=+$('cThresh').value, minLen=+$('cMin').value,
-        simp=+$('cSimp').value, denoise=+$('cDenoise').value, smooth=+$('cSmooth').value;
-
-  // 1) 다운스케일 + 픽셀 추출
+        simp=+$('cSimp').value, denoise=+$('cDenoise').value, smooth=+$('cSmooth').value, tol=+$('cTol').value;
+  const skipWhite = $('cSkipWhite').checked && TR.mode !== 'mono';
   const sc = detail / Math.max(iw, ih);
   const W = Math.max(8, Math.round(iw*sc)), H = Math.max(8, Math.round(ih*sc));
   TR.W = W; TR.H = H;
   pxCv.width = W; pxCv.height = H;
   pctx.drawImage(TR.img, 0, 0, W, H);
   const data = pctx.getImageData(0, 0, W, H).data;
+  const fmtB = b => b < 1024 ? b+'B' : b < 1048576 ? (b/1024).toFixed(1)+'K' : (b/1048576).toFixed(1)+'M';
 
-  // 2) 그레이스케일 + 노이즈 제거
+  if (TR.mode === 'scan'){
+    let runs = scanlineRuns(data, W, H, tol, skipWhite);
+    const over = runs.length > SCAN_BUDGET;
+    if (over) runs.length = SCAN_BUDGET;
+    TR.runs = runs; TR.strokes = [];
+    drawTracePreview();
+    setTStat('tsPx', W + '×' + H);
+    setTStat('tsStroke', runs.length);
+    setTStat('tsCmd', runs.length + (over ? ' ⚠' : ''));
+    setTStat('tsByte', fmtB(new Blob([buildScanJVG(runs)]).size));
+    setTStat('tsMs', (performance.now()-t0).toFixed(1));
+    updateInsertBtn();
+    return;
+  }
+
+  /* 엣지 모드: Gaussian → Sobel → NMS → Hysteresis → Sub-pixel */
   let gray = new Float32Array(W*H);
   for (let i = 0, p = 0; i < gray.length; i++, p += 4)
     gray[i] = 0.299*data[p] + 0.587*data[p+1] + 0.114*data[p+2];
   for (let k = 0; k < denoise; k++) gray = gaussBlur(gray, W, H);
-
-  // 3) Sobel (크기 + 방향)
   const mag = new Float32Array(W*H), dirX = new Float32Array(W*H), dirY = new Float32Array(W*H);
   let maxMag = 0;
   for (let y = 1; y < H-1; y++){
     for (let x = 1; x < W-1; x++){
       const i = y*W+x;
-      const p00=gray[i-W-1],p01=gray[i-W],p02=gray[i-W+1],
-            p10=gray[i-1],               p12=gray[i+1],
-            p20=gray[i+W-1],p21=gray[i+W],p22=gray[i+W+1];
-      const gx = -p00-2*p01-p02+p20+2*p21+p22;
-      const gy = -p00+p02-2*p10+2*p12-p20+p22;
+      const p00=gray[i-W-1],p01=gray[i-W],p02=gray[i-W+1],p10=gray[i-1],p12=gray[i+1],p20=gray[i+W-1],p21=gray[i+W],p22=gray[i+W+1];
+      const gx = -p00-2*p01-p02+p20+2*p21+p22, gy = -p00+p02-2*p10+2*p12-p20+p22;
       const m = Math.hypot(gx,gy);
       mag[i] = m;
       if (m > 0){ const inv = 1/m; dirX[i] = gx*inv; dirY[i] = gy*inv; }
       if (m > maxMag) maxMag = m;
     }
   }
-
-  // 4) 비최대 억제(NMS) → 1px 얇은 엣지
   const thin = new Float32Array(W*H);
   for (let y = 1; y < H-1; y++){
     for (let x = 1; x < W-1; x++){
@@ -1351,12 +1336,9 @@ function runTrace(){
       if (m < 1e-3) continue;
       const dx = Math.round(dirX[i]), dy = Math.round(dirY[i]);
       if (dx === 0 && dy === 0){ thin[i] = m; continue; }
-      const m1 = mag[i + dy*W + dx], m2 = mag[i - dy*W - dx];
-      if (m >= m1 && m >= m2) thin[i] = m;
+      if (m >= mag[i+dy*W+dx] && m >= mag[i-dy*W-dx]) thin[i] = m;
     }
   }
-
-  // 5) 히스테리시스 이중 임계값 → 끊김 없는 연결
   const hi = maxMag > 0 ? (thresh/255)*maxMag : Infinity, lo = hi*0.4;
   const edges = new Uint8Array(W*H), queue = [];
   for (let i = 0; i < W*H; i++){
@@ -1379,8 +1361,6 @@ function runTrace(){
   const edgeMask = new Uint8Array(W*H);
   let edgeCount = 0;
   for (let i = 0; i < W*H; i++) if (edges[i] === 2){ edgeMask[i] = 1; edgeCount++; }
-
-  // 6) 서브픽셀 보정 (포물선 피팅)
   const refX = new Float32Array(W*H), refY = new Float32Array(W*H);
   for (let i = 0; i < W*H; i++){
     const x = i % W, y = (i/W)|0;
@@ -1396,18 +1376,12 @@ function runTrace(){
     if (Math.abs(den) < 1e-6) continue;
     let tt = (m0 - m2) / (2*den);
     if (tt < -0.5) tt = -0.5; if (tt > 0.5) tt = 0.5;
-    refX[i] = x + tt*dirX[i];
-    refY[i] = y + tt*dirY[i];
+    refX[i] = x + tt*dirX[i]; refY[i] = y + tt*dirY[i];
   }
-
-  // 7) 폴리라인 추적
   const paths = traceStrokes(edgeMask, W, H);
-
-  // 8) 스무딩 + RDP + 소수점 좌표
-  const skipWhite = $('cSkipWhite').checked && TR.mode === 'color';
   const r1 = v => { const n = Math.round(v*10)/10; return n === 0 ? 0 : n; };
   const out = [];
-  let budget = 25000;
+  let budget = EDGE_BUDGET;
   for (const path of paths){
     if (budget <= 0) break;
     if (path.length < minLen) continue;
@@ -1431,27 +1405,21 @@ function runTrace(){
     out.push({ pts, color });
     budget -= pts.length - 1;
   }
-  const capped = budget <= 0;
-  TR.strokes = out;
-
+  TR.strokes = out; TR.runs = [];
   drawTracePreview();
-  const cmdCount = out.reduce((a,s) => a + s.pts.length - 1, 0);
-  const bytes = new Blob([buildJVG(out)]).size;
   setTStat('tsPx', edgeCount);
   setTStat('tsStroke', out.length);
-  setTStat('tsCmd', cmdCount + (capped ? '+' : ''));
-  setTStat('tsByte', bytes < 1024 ? bytes : (bytes/1024).toFixed(1)+'K');
+  setTStat('tsCmd', out.reduce((a,s) => a + s.pts.length - 1, 0) + (budget <= 0 ? ' ⚠' : ''));
+  setTStat('tsByte', fmtB(new Blob([buildJVG(out)]).size));
   setTStat('tsMs', (performance.now()-t0).toFixed(1));
-  $('trcInsert').style.opacity = out.length ? 1 : .4;
+  updateInsertBtn();
 }
 
 function traceStrokes(edges, W, H){
-  const visited = new Uint8Array(W*H);
-  const strokes = [];
+  const visited = new Uint8Array(W*H), strokes = [];
   const DIRS = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
   const walk = start => {
-    const path = [];
-    let cur = start, pd = null;
+    const path = []; let cur = start, pd = null;
     for(;;){
       const cx = cur % W, cy = (cur/W)|0;
       let best = -1, bd = null, bestScore = -1;
@@ -1465,35 +1433,30 @@ function traceStrokes(edges, W, H){
         if (s > bestScore){ bestScore = s; best = ni; bd = d; }
       }
       if (best === -1) break;
-      visited[best] = 1;
-      path.push(best);
-      cur = best; pd = bd;
+      visited[best] = 1; path.push(best); cur = best; pd = bd;
     }
     return path;
   };
   for (let i = 0; i < W*H; i++){
     if (!edges[i] || visited[i]) continue;
     visited[i] = 1;
-    const fwd = walk(i);
-    const back = walk(i);
+    const fwd = walk(i), back = walk(i);
     const path = back.reverse().concat([i], fwd);
     if (path.length >= 2) strokes.push(path);
   }
   return strokes;
 }
-
-function chaikin(pts){   // 코너 커팅으로 곡선 스무딩
+function chaikin(pts){
   if (pts.length <= 2) return pts;
   const out = [pts[0]];
   for (let i = 0; i < pts.length-1; i++){
     const a = pts[i], b = pts[i+1];
-    out.push([a[0]*0.75 + b[0]*0.25, a[1]*0.75 + b[1]*0.25]);
-    out.push([a[0]*0.25 + b[0]*0.75, a[1]*0.25 + b[1]*0.75]);
+    out.push([a[0]*0.75+b[0]*0.25, a[1]*0.75+b[1]*0.25]);
+    out.push([a[0]*0.25+b[0]*0.75, a[1]*0.25+b[1]*0.75]);
   }
   out.push(pts[pts.length-1]);
   return out;
 }
-
 function rdp(pts, eps){
   if (pts.length <= 2) return pts.slice();
   const keep = new Uint8Array(pts.length);
@@ -1502,16 +1465,13 @@ function rdp(pts, eps){
   while (stack.length){
     const [a, b] = stack.pop();
     let maxD = -1, idx = -1;
-    const ax=pts[a][0], ay=pts[a][1], bx=pts[b][0], by=pts[b][1];
-    const dx=bx-ax, dy=by-ay, len2 = dx*dx+dy*dy;
+    const ax=pts[a][0],ay=pts[a][1],bx=pts[b][0],by=pts[b][1];
+    const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy;
     for (let i=a+1;i<b;i++){
       const px=pts[i][0]-ax, py=pts[i][1]-ay;
       let d2;
       if (len2 === 0) d2 = px*px+py*py;
-      else {
-        const t = Math.max(0, Math.min(1, (px*dx+py*dy)/len2));
-        const qx=px-t*dx, qy=py-t*dy; d2=qx*qx+qy*qy;
-      }
+      else { const t = Math.max(0,Math.min(1,(px*dx+py*dy)/len2)); const qx=px-t*dx,qy=py-t*dy; d2=qx*qx+qy*qy; }
       if (d2 > maxD){ maxD = d2; idx = i; }
     }
     if (maxD > e2 && idx !== -1){ keep[idx]=1; stack.push([a,idx],[idx,b]); }
@@ -1519,11 +1479,21 @@ function rdp(pts, eps){
   return pts.filter((_,i) => keep[i]);
 }
 
+const fNum = v => { const s = v.toFixed(1); return s.endsWith('.0') ? s.slice(0,-2) : s; };
+function buildScanJVG(runs){
+  const L = ['JVG("1.0")', '', 'Weight(1)'];
+  const groups = new Map();
+  for (const r of runs){ if (!groups.has(r.color)) groups.set(r.color, []); groups.get(r.color).push(r); }
+  for (const [color, rs] of groups){
+    L.push('', 'Color("' + color + '")');
+    for (const r of rs) L.push('Line(' + fNum(r.x1) + ',' + fNum(r.y) + ',' + fNum(r.x2) + ',' + fNum(r.y) + ')');
+  }
+  return L.join('\n');
+}
 function buildJVG(strokes){
-  const f = v => { const s = v.toFixed(1); return s.endsWith('.0') ? s.slice(0,-2) : s; };
   const seg = (s, L) => {
     for (let i=0;i<s.pts.length-1;i++)
-      L.push('Line(' + f(s.pts[i][0]) + ',' + f(s.pts[i][1]) + ',' + f(s.pts[i+1][0]) + ',' + f(s.pts[i+1][1]) + ')');
+      L.push('Line(' + fNum(s.pts[i][0]) + ',' + fNum(s.pts[i][1]) + ',' + fNum(s.pts[i+1][0]) + ',' + fNum(s.pts[i+1][1]) + ')');
   };
   const L = ['JVG("1.0")', '', 'Weight(1)'];
   if (TR.mode === 'mono'){
@@ -1531,10 +1501,7 @@ function buildJVG(strokes){
     for (const s of strokes) seg(s, L);
   } else {
     const groups = new Map();
-    for (const s of strokes){
-      if (!groups.has(s.color)) groups.set(s.color, []);
-      groups.get(s.color).push(s);
-    }
+    for (const s of strokes){ if (!groups.has(s.color)) groups.set(s.color, []); groups.get(s.color).push(s); }
     for (const [color, sts] of groups){
       L.push('', 'Color("' + color + '")');
       for (const s of sts) seg(s, L);
@@ -1549,10 +1516,28 @@ function drawTracePreview(){
   if (trcCv.width !== W*2 || trcCv.height !== H*2){ trcCv.width = W*2; trcCv.height = H*2; }
   tctx.setTransform(2,0,0,2,0,0);
   tctx.clearRect(0,0,W,H);
-  tctx.globalAlpha = 0.30;
+  tctx.globalAlpha = 0.25;
   tctx.drawImage(TR.img, 0, 0, W, H);
   tctx.globalAlpha = 1;
   tctx.lineCap = tctx.lineJoin = 'round';
+  if (TR.mode === 'scan'){
+    tctx.lineWidth = 1;
+    if (TR.runs.length > 40000){
+      tctx.globalAlpha = 0.9;
+      tctx.drawImage(TR.img, 0, 0, W, H);
+      tctx.globalAlpha = 1;
+      return;
+    }
+    const groups = new Map();
+    for (const r of TR.runs){ if (!groups.has(r.color)) groups.set(r.color, []); groups.get(r.color).push(r); }
+    for (const [color, rs] of groups){
+      tctx.strokeStyle = '#'+color;
+      tctx.beginPath();
+      for (const r of rs){ tctx.moveTo(r.x1, r.y); tctx.lineTo(r.x2, r.y); }
+      tctx.stroke();
+    }
+    return;
+  }
   tctx.lineWidth = 0.9;
   const trace = sts => {
     tctx.beginPath();
@@ -1562,29 +1547,36 @@ function drawTracePreview(){
     }
     tctx.stroke();
   };
-  if (TR.mode === 'mono'){
-    tctx.strokeStyle = '#4FD8EB';
-    trace(TR.strokes);
-  } else {
+  if (TR.mode === 'mono'){ tctx.strokeStyle = '#4FD8EB'; trace(TR.strokes); }
+  else {
     const groups = new Map();
-    for (const s of TR.strokes){
-      if (!groups.has(s.color)) groups.set(s.color, []);
-      groups.get(s.color).push(s);
-    }
+    for (const s of TR.strokes){ if (!groups.has(s.color)) groups.set(s.color, []); groups.get(s.color).push(s); }
     for (const [color, sts] of groups){ tctx.strokeStyle = '#'+color; trace(sts); }
   }
 }
-
 function setTStat(id, v){
   const el = $(id); el.textContent = v;
   const box = el.parentElement;
   box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
 }
+function traceCount(){ return TR.mode === 'scan' ? TR.runs.length : TR.strokes.length; }
+function updateInsertBtn(){
+  const n = traceCount();
+  const btn = $('trcInsert');
+  btn.classList.toggle('dis', !n);
+  btn.textContent = n ? '에디터에 삽입 ▶' : '추적 결과 없음';
+}
+function updateModeUI(){
+  const scan = TR.mode === 'scan';
+  [['cThresh',!scan],['cMin',!scan],['cSmooth',!scan],['cSimp',!scan],['cTol',scan]].forEach(([id,on]) => {
+    $(id).closest('.ctl').classList.toggle('off', !on);
+  });
+  $('skipWhiteWrap').style.opacity = TR.mode === 'mono' ? .35 : 1;
+}
 
-/* ---------- UI 바인딩 ---------- */
+/* ---------- UI ---------- */
 const ta = $('src'), gutter = $('gutter'), logView = $('v-log');
 let errLine = -1, deb = null, compileSeq = 0, lastLines = -1, lastErrLine = -2;
-
 function log(kind, tag, msg){
   const t = new Date().toTimeString().slice(0,8);
   const cls = {ok:'tag-ok',warn:'tag-warn',err:'tag-err',info:'tag-info',state:'tag-state'}[kind] || 'tag-info';
@@ -1609,24 +1601,24 @@ function updateGutter(){
   const n = ta.value.split('\n').length;
   if (n === lastLines && errLine === lastErrLine) return;
   lastLines = n; lastErrLine = errLine;
+  const show = Math.min(n, 4000);
   let h = '';
-  for (let i = 1; i <= n; i++)
-    h += '<span' + (i === errLine ? ' class="err"' : '') + '>' + i + '</span>';
+  for (let i = 1; i <= show; i++) h += '<span' + (i === errLine ? ' class="err"' : '') + '>' + i + '</span>';
+  if (n > 4000) h += '<span>…</span>';
   gutter.innerHTML = h;
 }
 function updateMeta(){
   const v = ta.value;
   $('metaSize').textContent = new Blob([v]).size + ' B';
   const pos = ta.selectionStart, upto = v.slice(0, pos);
-  const ln = upto.split('\n').length, col = pos - upto.lastIndexOf('\n');
-  $('metaPos').textContent = 'Ln ' + ln + ', Col ' + col;
+  $('metaPos').textContent = 'Ln ' + upto.split('\n').length + ', Col ' + (pos - upto.lastIndexOf('\n'));
 }
 function renderTokens(tokens){
   const list = tokens.filter(t => t.type !== 'EOF');
   let h = list.slice(0, 800).map(t => {
     if (t.type === 'STRING') return '<span class="tk tk-str">"' + esc(t.value) + '"</span>';
     if (t.type === 'NUMBER') return '<span class="tk tk-num">' + t.value + '</span>';
-    if (t.type === 'IDENT')  return '<span class="tk tk-id">' + esc(t.value) + '</span>';
+    if (t.type === 'IDENT') return '<span class="tk tk-id">' + esc(t.value) + '</span>';
     return '<span class="tk tk-pun">' + esc(t.value) + '</span>';
   }).join('');
   if (list.length > 800) h += '<span class="tk tk-pun">… +' + (list.length-800) + ' more</span>';
@@ -1677,14 +1669,12 @@ async function compile(source, animate){
     log('info','LEX','토큰 ' + (tokens.length-1) + '개 · ' + lexMs.toFixed(2) + 'ms');
     setStage(0,'done');
     if (animate){ await sleep(150); if (seq !== compileSeq) return; }
-
     setStage(1,'active');
     const ast = parse(tokens);
     renderAST(ast);
     log('info','AST','명령 ' + ast.length + '개 파싱 완료');
     setStage(1,'done');
     if (animate){ await sleep(150); if (seq !== compileSeq) return; }
-
     setStage(2,'active');
     const gen = codegen(ast, log);
     const ms = performance.now() - t0;
@@ -1697,9 +1687,8 @@ async function compile(source, animate){
     setStat('stBytes', new Blob([JSON.stringify(gen.ir)]).size + 'B');
     setStage(2,'done');
     if (animate){ await sleep(130); if (seq !== compileSeq) return; }
-
     setStage(3,'active');
-    log('ok','OK','컴파일 완료 — ' + gen.ir.length + ' ops · 루프 ' + gen.loops + '개 · ' + ms.toFixed(1) + 'ms');
+    log('ok','OK','컴파일 완료 — ' + gen.ir.length + ' ops · ' + ms.toFixed(1) + 'ms');
     playIR(gen.ir, animate, () => {
       if (seq !== compileSeq) return;
       setStage(3,'done'); setLED('ok');
@@ -1761,13 +1750,11 @@ $('v-ir').addEventListener('mouseover', e => {
   ctx.setTransform(tf.dpr,0,0,tf.dpr,0,0);
   ctx.lineCap = ctx.lineJoin = 'round';
   ctx.save();
-  ctx.shadowColor = 'rgba(255,255,255,.85)';
-  ctx.shadowBlur = 12;
+  ctx.shadowColor = 'rgba(255,255,255,.85)'; ctx.shadowBlur = 12;
   drawOp(ctx, o, 1, tf);
   ctx.restore();
 });
 $('v-ir').addEventListener('mouseleave', () => { if (!isPlaying) drawStatic(); });
-
 function download(name, text, mime){
   const url = URL.createObjectURL(new Blob([text], {type: mime}));
   const a = Object.assign(document.createElement('a'), {href: url, download: name});
@@ -1800,29 +1787,37 @@ document.addEventListener('paste', e => {
   }
 });
 let trcDeb = null;
-['cDetail','cThresh','cMin','cSimp','cDenoise','cSmooth'].forEach(id => $(id).addEventListener('input', () => {
+['cDetail','cThresh','cMin','cSimp','cDenoise','cSmooth','cTol'].forEach(id => $(id).addEventListener('input', () => {
   $('vDetail').textContent = $('cDetail').value;
   $('vThresh').textContent = $('cThresh').value;
   $('vDenoise').textContent = $('cDenoise').value;
   $('vMin').textContent = $('cMin').value;
   $('vSmooth').textContent = $('cSmooth').value;
   $('vSimp').textContent = (+$('cSimp').value).toFixed(1);
-  clearTimeout(trcDeb); trcDeb = setTimeout(runTrace, 150);
+  $('vTol').textContent = $('cTol').value;
+  clearTimeout(trcDeb); trcDeb = setTimeout(runTrace, 200);
 }));
 $('modeSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
   $('modeSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
   TR.mode = b.dataset.m;
-  $('skipWhiteWrap').style.opacity = TR.mode === 'color' ? 1 : .35;
+  updateModeUI();
   runTrace();
 }));
 $('cSkipWhite').addEventListener('change', runTrace);
 $('trcInsert').addEventListener('click', () => {
-  if (!TR.strokes.length) return;
-  ta.value = buildJVG(TR.strokes);
+  if (!traceCount()){
+    const btn = $('trcInsert');
+    btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake');
+    return;
+  }
+  ta.value = TR.mode === 'scan' ? buildScanJVG(TR.runs) : buildJVG(TR.strokes);
   document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
   updateGutter(); updateMeta();
   closeTracer();
+  const ep = document.querySelector('.editor-panel');
+  ep.classList.add('glow');
+  setTimeout(() => ep.classList.remove('glow'), 1000);
   compile(ta.value, true);
 });
 
@@ -1842,13 +1837,11 @@ document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () =
   updateGutter(); updateMeta();
   compile(ta.value, true);
 }));
-
-new ResizeObserver(() => {
-  sizeCanvas();
-  if (!isPlaying) drawStatic();
-}).observe(wrap);
+new ResizeObserver(() => { sizeCanvas(); if (!isPlaying) drawStatic(); }).observe(wrap);
 
 sizeCanvas();
+updateModeUI();
+updateInsertBtn();
 ta.value = SAMPLES.house;
 document.querySelector('.chip[data-s="house"]').classList.add('on');
 updateGutter(); updateMeta();
