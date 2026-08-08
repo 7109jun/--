@@ -247,3 +247,372 @@ typepy를 한 문장으로 요약하면 다음과 같습니다.
 
 이 규칙만 기억하면 typepy의 모든 동작을 예측할 수 있습니다.
 유연함이 필요한 곳에서는 Python을 쓰고, 확실함이 필요한 경계에서는 typepy로 값을 정규화하는 패턴을 권장합니다.
+# Code
+```/**
+ * typepy.c - Python 레이어 없는 완전 자립형 스마트 컨버터
+ *
+ * 공개 API:
+ *   typepy.smart_convert(obj)
+ *   typepy.smart_convert_list(list)
+ *
+ * 동작 철학 (변경 금지):
+ *   None        → ""
+ *   bool        → int
+ *   int         → int
+ *   float       → float
+ *   숫자 문자열  → int 또는 float (arbitrary precision int 지원)
+ *   일반 문자열  → 문자열 (ASCII ' ', '\t'만 trim)
+ *   기타 객체    → int → float → str 순서로 시도
+ *
+ * 에러 정책:
+ *   - 정상적인 변환 실패(잘못된 숫자 문자열 등)는 예외를 발생시키지 않고
+ *     문자열 fallback으로 처리하며, 내부에서 PyErr를 클리어한다.
+ *   - 메모리 부족(MemoryError) 등 Python/C API 자체의 치명적인 실패는
+ *     PyErr를 유지한 채 상위로 전파한다.
+ */
+
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#include <stdint.h>
+#include <math.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+
+/* ============================================================================
+ * 내부 헬퍼
+ * ============================================================================ */
+
+/* ASCII 공백(' ', '\t')만 trim. Unicode whitespace는 지원하지 않는다. */
+static const char* _trim_ascii(const char* s, Py_ssize_t len, Py_ssize_t* out_len) {
+    Py_ssize_t start = 0;
+    while (start < len && (s[start] == ' ' || s[start] == '\t')) start++;
+    Py_ssize_t end = len;
+    while (end > start && (s[end-1] == ' ' || s[end-1] == '\t')) end--;
+    *out_len = end - start;
+    return s + start;
+}
+
+/* 문자열이 정수 형태인지 판별. 부호('+'/'-')와 ASCII 숫자만 인정. */
+static int _str_is_integer(const char* s, Py_ssize_t len) {
+    if (len == 0) return 0;
+    Py_ssize_t i = 0;
+    if (s[0] == '-' || s[0] == '+') {
+        if (len == 1) return 0;
+        i = 1;
+    }
+    for (; i < len; i++) {
+        if (s[i] < '0' || s[i] > '9') return 0;
+    }
+    return 1;
+}
+
+/*
+ * 길이 len인 문자열의 null-terminated 복사본 생성.
+ * 성공: 버퍼 포인터 (호출 측에서 PyMem_Free 필요)
+ * 실패: NULL + MemoryError 설정
+ *       → 메모리 부족은 "정상 변환 실패"가 아니므로 반드시 에러를 남긴다.
+ */
+static char* _dup_cstr(const char* s, Py_ssize_t len) {
+    char* buf = (char*)PyMem_Malloc((size_t)len + 1);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    memcpy(buf, s, (size_t)len);
+    buf[len] = '\0';
+    return buf;
+}
+
+/* ============================================================================
+ * 문자열 → 숫자 파싱 (파싱 1회, arbitrary precision 지원)
+ *
+ * 반환 규약:
+ *   성공       → 새 PyObject* (PyLong 또는 PyFloat)
+ *   정상 실패  → NULL, PyErr 없음 (fallback 대상)
+ *   치명적 실패 → NULL, PyErr 설정됨 (MemoryError 등, 상위로 전파)
+ * ============================================================================ */
+
+/* 문자열 → Python int (arbitrary precision). 정수 형태가 아니면 정상 실패. */
+static PyObject* _try_parse_int(const char* s, Py_ssize_t len) {
+    if (!_str_is_integer(s, len)) {
+        return NULL;  /* 정상 실패: PyErr 없음 */
+    }
+
+    char* buf = _dup_cstr(s, len);
+    if (buf == NULL) {
+        return NULL;  /* MemoryError 설정됨 */
+    }
+
+    char* end = NULL;
+    PyObject* result = PyLong_FromString(buf, &end, 10);
+    /* buf 해제 전에 end가 가리키는 값을 먼저 확인해야 함 */
+    int fully_consumed = (end != NULL && *end == '\0');
+    PyMem_Free(buf);
+
+    if (result == NULL) {
+        /* PyLong_FromString 실패: ValueError(정상) 또는 MemoryError(치명) */
+        if (!PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            PyErr_Clear();
+        }
+        return NULL;
+    }
+
+    if (!fully_consumed) {
+        /* _str_is_integer를 통과했다면 이론상 도달 불가. 방어적 처리. */
+        Py_DECREF(result);
+        return NULL;  /* PyErr 없음 */
+    }
+
+    return result;
+}
+
+/*
+ * 문자열 → float64. strtod 파싱은 이 함수에서만 1회 수행한다.
+ * 유효 조건: strtod가 1문자 이상 소비 + 문자열 끝까지 소비 + ERANGE 없음.
+ */
+static PyObject* _try_parse_float(const char* s, Py_ssize_t len) {
+    if (len == 0) {
+        return NULL;  /* 정상 실패 */
+    }
+
+    char* buf = _dup_cstr(s, len);
+    if (buf == NULL) {
+        return NULL;  /* MemoryError 설정됨 */
+    }
+
+    errno = 0;
+    char* end = NULL;
+    double val = strtod(buf, &end);
+    int valid = (end != buf && *end == '\0' && errno != ERANGE);
+    PyMem_Free(buf);
+
+    if (!valid) {
+        return NULL;  /* 정상 실패: PyErr 없음 */
+    }
+
+    return PyFloat_FromDouble(val);
+}
+
+/* ============================================================================
+ * 비-문자열 객체 → 숫자 변환 시도 (반환 규약 동일)
+ * ============================================================================ */
+
+static PyObject* _try_to_int(PyObject* obj) {
+    if (PyLong_CheckExact(obj)) {
+        Py_INCREF(obj);
+        return obj;
+    }
+    if (PyBool_Check(obj)) {
+        return PyLong_FromLong(obj == Py_True ? 1 : 0);
+    }
+    if (PyFloat_CheckExact(obj)) {
+        double v = PyFloat_AS_DOUBLE(obj);
+        if (isnan(v) || isinf(v)) {
+            return NULL;  /* 정상 실패 */
+        }
+        PyObject* result = PyLong_FromDouble(v);
+        if (result == NULL && !PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            /* OverflowError 등은 정상 변환 실패로 취급 */
+            PyErr_Clear();
+        }
+        return result;
+    }
+    return NULL;  /* 정상 실패 */
+}
+
+static PyObject* _try_to_float(PyObject* obj) {
+    if (PyFloat_CheckExact(obj)) {
+        Py_INCREF(obj);
+        return obj;
+    }
+    if (PyBool_Check(obj)) {
+        return PyFloat_FromDouble(obj == Py_True ? 1.0 : 0.0);
+    }
+    if (PyLong_CheckExact(obj)) {
+        double v = PyLong_AsDouble(obj);
+        if (v == -1.0 && PyErr_Occurred()) {
+            if (!PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                PyErr_Clear();  /* OverflowError 등 → 정상 변환 실패 */
+            }
+            return NULL;
+        }
+        return PyFloat_FromDouble(v);
+    }
+    return NULL;  /* 정상 실패 */
+}
+
+/*
+ * 최종 str 폴백.
+ * 주의: PyErr가 클리어된 상태에서 호출되어야 한다.
+ * 일반적인 __str__/__repr__ 실패는 흡수하되 MemoryError는 숨기지 않는다.
+ */
+static PyObject* _force_to_str(PyObject* obj) {
+    if (PyUnicode_CheckExact(obj)) {
+        Py_INCREF(obj);
+        return obj;
+    }
+
+    PyObject* result = PyObject_Str(obj);
+    if (result != NULL) {
+        return result;
+    }
+
+    /* Str 실패: MemoryError는 전파, 그 외는 클리어 후 Repr 시도 */
+    if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+        return NULL;
+    }
+    PyErr_Clear();
+
+    result = PyObject_Repr(obj);
+    if (result != NULL) {
+        return result;
+    }
+
+    if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+        return NULL;
+    }
+    PyErr_Clear();
+
+    /* 최후 폴백. 이마저 실패하면 MemoryError이므로 자연스럽게 전파된다. */
+    return PyUnicode_FromString("<unconvertible>");
+}
+
+/* ============================================================================
+ * 공개 API
+ * ============================================================================ */
+
+static PyObject* typepy_smart_convert(PyObject* self, PyObject* obj) {
+    /* None → 빈 문자열 */
+    if (obj == Py_None) {
+        return PyUnicode_FromString("");
+    }
+
+    /* 이미 순수 네이티브 타입이면 그대로 반환 */
+    if (PyLong_CheckExact(obj) || PyFloat_CheckExact(obj) || PyUnicode_CheckExact(obj)) {
+        Py_INCREF(obj);
+        return obj;
+    }
+
+    /* bool → int */
+    if (PyBool_Check(obj)) {
+        return PyLong_FromLong(obj == Py_True ? 1 : 0);
+    }
+
+    /* 문자열: 내용 기반으로 int → float → str 판단 */
+    if (PyUnicode_Check(obj)) {
+        Py_ssize_t raw_len;
+        const char* raw_s = PyUnicode_AsUTF8AndSize(obj, &raw_len);
+        if (raw_s == NULL) {
+            /* UTF-8 변환 실패: MemoryError는 전파,
+             * 그 외(인코딩 불가 문자열 등)는 에러를 클리어하고
+             * 원래 문자열을 그대로 반환한다. */
+            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                return NULL;
+            }
+            PyErr_Clear();
+            Py_INCREF(obj);
+            return obj;
+        }
+
+        Py_ssize_t len;
+        const char* s = _trim_ascii(raw_s, raw_len, &len);
+        if (len == 0) {
+            return PyUnicode_FromString("");
+        }
+
+        /* 정수 우선 시도 (arbitrary precision 지원) */
+        PyObject* num = _try_parse_int(s, len);
+        if (num != NULL) {
+            return num;
+        }
+        if (PyErr_Occurred()) {
+            return NULL;  /* MemoryError 등 치명적 오류 전파 */
+        }
+
+        /* 실수 시도 (파싱 1회) */
+        num = _try_parse_float(s, len);
+        if (num != NULL) {
+            return num;
+        }
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+
+        /* 숫자 아님 → trim된 문자열 반환 */
+        return PyUnicode_FromStringAndSize(s, len);
+    }
+
+    /* 기타 객체: int → float → str 순서로 시도 */
+    PyObject* result = _try_to_int(obj);
+    if (result != NULL) {
+        return result;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    result = _try_to_float(obj);
+    if (result != NULL) {
+        return result;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    return _force_to_str(obj);
+}
+
+static PyObject* typepy_smart_convert_list(PyObject* self, PyObject* list_obj) {
+    if (!PyList_Check(list_obj)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a list");
+        return NULL;
+    }
+
+    Py_ssize_t size = PyList_Size(list_obj);
+    PyObject* result = PyList_New(size);
+    if (result == NULL) {
+        return NULL;  /* MemoryError 전파 */
+    }
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        PyObject* item = PyList_GET_ITEM(list_obj, i);
+        PyObject* converted = typepy_smart_convert(NULL, item);
+        if (converted == NULL) {
+            Py_DECREF(result);
+            return NULL;  /* 치명적 오류 전파 */
+        }
+        PyList_SET_ITEM(result, i, converted);  /* ref 이전 */
+    }
+
+    return result;
+}
+
+/* ============================================================================
+ * 모듈 등록
+ * ============================================================================ */
+
+static PyMethodDef TypePyMethods[] = {
+    {"smart_convert", typepy_smart_convert, METH_O,
+     "Auto-detect type and convert.\n"
+     "Normal conversion failures fall back to str without raising.\n"
+     "Fatal errors (e.g. MemoryError) are still propagated."},
+    {"smart_convert_list", typepy_smart_convert_list, METH_O,
+     "Batch smart_convert for lists. Same auto-detect + fallback logic."},
+    {NULL, NULL, 0, NULL}
+};
+
+static struct PyModuleDef typepymodule = {
+    PyModuleDef_HEAD_INIT,
+    "typepy",
+    "Self-contained C smart converter.\n"
+    "None -> \"\", bool -> int, numeric string -> int/float,\n"
+    "other values -> int -> float -> str fallback.\n"
+    "Arbitrary precision integer strings are preserved as Python int.",
+    -1,
+    TypePyMethods
+};
+
+PyMODINIT_FUNC PyInit_typepy(void) {
+    return PyModule_Create(&typepymodule);
+}
