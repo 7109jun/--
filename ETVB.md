@@ -3,6 +3,7 @@
 > **Extract the virtual brain에 약자를 따서 ETVB가 됐습네다.**
 ### 별로 실용성 있진 않아요 ㅠ
 
+<img width="1200" height="1210" alt="스크린샷 2026-08-10 220004" src="https://github.com/user-attachments/assets/1f328630-ab42-4fbe-9fa1-000f03807339" />
 
 
 
