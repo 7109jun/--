@@ -11,10 +11,10 @@
 ```
 /**
  * ============================================================================
- * Etvb (Extract the Virtual Brain) v1.1 - Reference Implementation
+ * Etvb (Extract the Virtual Brain) v1.2 - Reference Implementation
  * ============================================================================
  * 
- * [규격서] Etvb Binary Format Specification v1.1
+ * [규격서] Etvb Binary Format Specification v1.2
  * ------------------------------------------------
  * 
  * 1. 개요
@@ -70,10 +70,11 @@
 
 #define ETVB_MAGIC          0x42565445U // "ETVB" in Little-Endian
 #define ETVB_VERSION_MAJOR  1
-#define ETVB_VERSION_MINOR  1
+#define ETVB_VERSION_MINOR  2
 #define ETVB_ALIGNMENT      64
 #define ETVB_MAX_SECTIONS   64
 #define ETVB_BUFFER_SIZE    (4 * 1024 * 1024) // 4MB Read Buffer for Weights
+#define MAX_TENSORS         1024 // 최대 파싱 가능한 텐서 수
 
 /* 에러 코드 */
 typedef enum {
@@ -91,9 +92,7 @@ typedef enum {
     ETVB_ERR_PARSE_JSON
 } etvb_error_t;
 
-/* --------------------------------------------------------------------------
- * 1. 아키텍처 ID(Enum) 추가
- * -------------------------------------------------------------------------- */
+/* 아키텍처 ID(Enum) */
 typedef enum {
     ETVB_ARCH_UNKNOWN       = 0,
     ETVB_ARCH_GEMMA_2B      = 1,
@@ -190,6 +189,16 @@ typedef struct {
 
 #pragma pack(pop)
 
+/* 텐서 정보 구조체 (Safetensors 파싱용) */
+typedef struct {
+    char name[128];
+    uint32_t dtype; // 0:F32, 1:F16, 2:BF16, 3:I8, 4:I32, 5:I64, 6:U8, 7:BOOL
+    uint32_t ndim;
+    uint64_t shape[8];
+    uint64_t data_offset;
+    uint64_t data_length;
+} tensor_info_t;
+
 /* ==========================================================================
  * 3. 유틸리티 함수 (Utilities)
  * ========================================================================== */
@@ -215,7 +224,6 @@ static const char* etvb_strerror(etvb_error_t err) {
     }
 }
 
-/* 아키텍처 이름 반환 */
 const char* get_arch_name(etvb_architecture_t arch) {
     switch(arch) {
         case ETVB_ARCH_GEMMA_2B: return "Gemma-2B";
@@ -276,22 +284,17 @@ static uint32_t crc32c_sw(const uint8_t* data, size_t length) {
 }
 
 /* --------------------------------------------------------------------------
- * 2. 가중치(Weights) 분할 및 패킹 로직 연동
+ * Safetensors Pure C Parser (No External Libraries)
  * -------------------------------------------------------------------------- */
 
-/* Safetensors JSON 헤더 파싱 (간소화된 구현) */
-/* 실제 프로덕션에서는 cJSON나 jansson 라이브러리 사용을 권장합니다. */
-typedef struct {
-    char name[128];
-    uint32_t dtype; // 0:F32, 1:F16, etc.
-    uint32_t ndim;
-    uint64_t shape[8];
-    uint64_t data_offset;
-    uint64_t data_length;
-} tensor_info_t;
+/* 공백 건너뛰기 */
+static const char* skip_whitespace(const char* p) {
+    while (*p && isspace(*p)) p++;
+    return p;
+}
 
-/* JSON에서 특정 키의 값을 찾는 매우 단순한 파서 */
-static bool find_json_value(const char* json, const char* key, char* value_buf, size_t buf_size) {
+/* 문자열 값 추출 ("value") */
+static bool extract_string_value(const char* json, const char* key, char* out_buf, size_t buf_size) {
     char search_key[256];
     snprintf(search_key, sizeof(search_key), "\"%s\"", key);
     
@@ -299,40 +302,65 @@ static bool find_json_value(const char* json, const char* key, char* value_buf, 
     if (!pos) return false;
     
     pos += strlen(search_key);
-    while (*pos && isspace(*pos)) pos++;
+    pos = skip_whitespace(pos);
     if (*pos != ':') return false;
     pos++;
-    while (*pos && isspace(*pos)) pos++;
+    pos = skip_whitespace(pos);
     
     if (*pos == '"') {
-        // String value
         pos++;
         const char* end = strchr(pos, '"');
         if (!end) return false;
         size_t len = end - pos;
         if (len >= buf_size) len = buf_size - 1;
-        memcpy(value_buf, pos, len);
-        value_buf[len] = '\0';
-        return true;
-    } else if (isdigit(*pos) || *pos == '-') {
-        // Number value
-        int i = 0;
-        while (pos[i] && (isdigit(pos[i]) || pos[i] == '.' || pos[i] == '-' || pos[i] == 'e' || pos[i] == '+')) {
-            if (i < buf_size - 1) value_buf[i] = pos[i];
-            i++;
-        }
-        value_buf[i] = '\0';
+        memcpy(out_buf, pos, len);
+        out_buf[len] = '\0';
         return true;
     }
     return false;
 }
 
-/* Safetensors 파일에서 텐서 정보 추출 */
-static int parse_safetensors_header(FILE* fp, tensor_info_t** tensors_out, uint32_t* count_out) {
-    uint64_t header_size;
-    if (fread(&header_size, sizeof(uint64_t), 1, fp) != 1) return -1;
+/* 정수 배열 추출 ([1, 2, 3]) */
+static int extract_int_array(const char* json, const char* key, uint64_t* out_arr, int max_count) {
+    char search_key[256];
+    snprintf(search_key, sizeof(search_key), "\"%s\"", key);
     
-    if (header_size > 100 * 1024 * 1024) return -1; // Sanity check: max 100MB header
+    const char* pos = strstr(json, search_key);
+    if (!pos) return -1;
+    
+    pos += strlen(search_key);
+    pos = skip_whitespace(pos);
+    if (*pos != ':') return -1;
+    pos++;
+    pos = skip_whitespace(pos);
+    
+    if (*pos != '[') return -1;
+    pos++;
+    
+    int count = 0;
+    while (*pos && *pos != ']' && count < max_count) {
+        pos = skip_whitespace(pos);
+        if (isdigit(*pos) || *pos == '-') {
+            out_arr[count++] = strtoull(pos, (char**)&pos, 10);
+        } else {
+            break;
+        }
+        pos = skip_whitespace(pos);
+        if (*pos == ',') pos++;
+    }
+    return count;
+}
+
+/* Safetensors 파일에서 텐서 정보 추출 (순수 C 구현) */
+static int parse_safetensors_header(FILE* fp, tensor_info_t** tensors_out, uint32_t* count_out) {
+    uint64_t header_size_le;
+    if (fread(&header_size_le, sizeof(uint64_t), 1, fp) != 1) return -1;
+    
+    // Little-Endian to Host (Assuming LE host for simplicity, or use manual swap if needed)
+    // Most modern systems are LE. If BE, swap bytes here.
+    uint64_t header_size = header_size_le;
+    
+    if (header_size > 100 * 1024 * 1024) return -1; // Sanity check
     
     char* json_buf = malloc(header_size + 1);
     if (!json_buf) return -1;
@@ -343,35 +371,98 @@ static int parse_safetensors_header(FILE* fp, tensor_info_t** tensors_out, uint3
     }
     json_buf[header_size] = '\0';
     
-    // Very naive parsing: Look for "tensors": { ... }
-    // This is a simplified demo. Real implementation needs a proper JSON parser.
-    // We will assume a flat structure for demo purposes or just count dummy tensors.
+    // Allocate max tensors
+    tensor_info_t* tensors = calloc(MAX_TENSORS, sizeof(tensor_info_t));
+    if (!tensors) {
+        free(json_buf);
+        return -1;
+    }
     
-    // For this single-file demo, we will simulate finding 2 tensors if the file looks like safetensors
-    // In reality, you would iterate through the JSON object keys.
+    uint32_t count = 0;
     
-    *count_out = 2; // Dummy count for demo
-    *tensors_out = calloc(*count_out, sizeof(tensor_info_t));
+    // Naive parsing: Iterate through keys in the root object
+    // Structure: { "tensor_name": { "dtype": "...", "shape": [...], "data_offsets": [...] }, ... }
     
-    // Tensor 1: model.embed_tokens.weight
-    strcpy((*tensors_out)[0].name, "model.embed_tokens.weight");
-    (*tensors_out)[0].dtype = 1; // F16
-    (*tensors_out)[0].ndim = 2;
-    (*tensors_out)[0].shape[0] = 32000;
-    (*tensors_out)[0].shape[1] = 2048;
-    (*tensors_out)[0].data_offset = 8 + header_size; // After header
-    (*tensors_out)[0].data_length = 32000 * 2048 * 2; // F16 size
+    const char* p = json_buf;
+    p = skip_whitespace(p);
+    if (*p == '{') p++;
     
-    // Tensor 2: model.layers.0.self_attn.q_proj.weight
-    strcpy((*tensors_out)[1].name, "model.layers.0.self_attn.q_proj.weight");
-    (*tensors_out)[1].dtype = 1; // F16
-    (*tensors_out)[1].ndim = 2;
-    (*tensors_out)[1].shape[0] = 2048;
-    (*tensors_out)[1].shape[1] = 2048;
-    (*tensors_out)[1].data_offset = (*tensors_out)[0].data_offset + (*tensors_out)[0].data_length;
-    (*tensors_out)[1].data_length = 2048 * 2048 * 2;
+    while (*p && *p != '}' && count < MAX_TENSORS) {
+        p = skip_whitespace(p);
+        if (*p == '"') {
+            // Found a key (tensor name)
+            p++;
+            const char* name_start = p;
+            const char* name_end = strchr(p, '"');
+            if (!name_end) break;
+            
+            size_t name_len = name_end - name_start;
+            if (name_len >= 128) name_len = 127;
+            memcpy(tensors[count].name, name_start, name_len);
+            tensors[count].name[name_len] = '\0';
+            
+            p = name_end + 1;
+            p = skip_whitespace(p);
+            if (*p != ':') break;
+            p++;
+            p = skip_whitespace(p);
+            
+            if (*p == '{') {
+                // Start of tensor metadata object
+                const char* obj_start = p;
+                const char* obj_end = strchr(p, '}');
+                if (!obj_end) break;
+                
+                // Extract dtype
+                char dtype_str[32];
+                if (extract_string_value(obj_start, "dtype", dtype_str, sizeof(dtype_str))) {
+                    if (strcmp(dtype_str, "F32") == 0) tensors[count].dtype = 0;
+                    else if (strcmp(dtype_str, "F16") == 0) tensors[count].dtype = 1;
+                    else if (strcmp(dtype_str, "BF16") == 0) tensors[count].dtype = 2;
+                    else if (strcmp(dtype_str, "I8") == 0) tensors[count].dtype = 3;
+                    else if (strcmp(dtype_str, "I32") == 0) tensors[count].dtype = 4;
+                    else if (strcmp(dtype_str, "I64") == 0) tensors[count].dtype = 5;
+                    else tensors[count].dtype = 0; // Default F32
+                }
+                
+                // Extract shape
+                uint64_t shape[8];
+                int ndim = extract_int_array(obj_start, "shape", shape, 8);
+                if (ndim > 0) {
+                    tensors[count].ndim = ndim;
+                    memcpy(tensors[count].shape, shape, ndim * sizeof(uint64_t));
+                }
+                
+                // Extract data_offsets
+                uint64_t offsets[2];
+                int off_count = extract_int_array(obj_start, "data_offsets", offsets, 2);
+                if (off_count == 2) {
+                    tensors[count].data_offset = offsets[0];
+                    tensors[count].data_length = offsets[1] - offsets[0];
+                }
+                
+                p = obj_end + 1;
+                count++;
+            } else {
+                break; // Invalid format
+            }
+        } else {
+            break;
+        }
+        
+        p = skip_whitespace(p);
+        if (*p == ',') p++;
+    }
     
     free(json_buf);
+    
+    if (count == 0) {
+        free(tensors);
+        return -1;
+    }
+    
+    *tensors_out = tensors;
+    *count_out = count;
     return 0;
 }
 
@@ -406,7 +497,6 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     total_written += sizeof(header);
 
     // 2. 섹션 인덱스 준비
-    // Neural Core (Weights) + Behavioral Profile
     etvb_section_entry_t entries[2] = {0};
     uint32_t sec_count = 0;
 
@@ -433,8 +523,7 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     }
     
     if (!fp_weights) {
-        // Fallback to dummy data if no safetensors found
-        printf("[Pack] Warning: No safetensors found. Using dummy weights.\n");
+        printf("[Pack] Warning: No valid safetensors found. Using dummy weights.\n");
         total_weight_size = 1024; 
     }
 
@@ -443,7 +532,6 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     entries[0].alignment_exp = 6; // 64 bytes
     entries[0].flags = 0;
     entries[0].uncompressed_size = total_weight_size;
-    // Checksum will be calculated during write
     sec_count++;
 
     // --- 섹션 2: BEHAVIORAL ---
@@ -718,9 +806,6 @@ etvb_error_t etvb_unpack(const char* etvb_path, const char* output_dir, bool ver
 
         printf("[Unpack] Extracted Section %d (Type: 0x%X). Size: %lu bytes.\n", 
                i, entries[i].type, entries[i].data_size);
-        
-        // TODO: Save to file based on type
-        // if (entries[i].type == ETVB_SEC_NEURAL_CORE) save as .safetensors
         
         free(buffer);
     }
