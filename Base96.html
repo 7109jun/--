@@ -2,47 +2,44 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>Base96 Binary Encoder/Decoder</title>
+<title>Base96 Binary File ↔ Encode</title>
 <style>
-  body { font-family: monospace; padding: 2rem; background: #1a1a2e; color: #eee; max-width: 900px; margin: auto; }
-  h2 { color: #e94560; }
-  .box { margin: 12px 0; }
-  label { display: block; color: #aaa; margin-bottom: 4px; }
-  input[type="file"] { color: #eee; }
-  textarea { width: 100%; height: 100px; background: #16213e; color: #0f0; border: 1px solid #0f3460; padding: 8px; font-size: 13px; box-sizing: border-box; white-space: pre-wrap; word-break: break-all; }
-  button { margin: 4px; padding: 8px 18px; background: #0f3460; color: #fff; border: none; cursor: pointer; font-family: monospace; }
-  button:hover { background: #e94560; }
-  button:disabled { opacity: .4; cursor: not-allowed; }
-  #status { color: #aaa; font-size: 12px; margin-top: 4px; }
-  a.download { display: inline-block; margin-top: 8px; color: #4ecca3; text-decoration: underline; }
+  body{font-family:monospace;padding:2rem;background:#1a1a2e;color:#eee;max-width:900px;margin:auto}
+  h2{color:#e94560}
+  .box{margin:12px 0}
+  label{display:block;color:#aaa;margin-bottom:4px}
+  input[type="file"]{color:#eee}
+  textarea{width:100%;height:100px;background:#16213e;color:#0f0;border:1px solid #0f3460;padding:8px;font-size:13px;box-sizing:border-box;white-space:pre-wrap;word-break:break-all}
+  button{margin:4px;padding:8px 18px;background:#0f3460;color:#fff;border:none;cursor:pointer;font-family:monospace}
+  button:hover{background:#e94560}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  #status,#decodeStatus{color:#aaa;font-size:12px;margin-top:4px}
 </style>
 </head>
 <body>
 
 <h2>📦 Base96 Binary File ↔ Encode</h2>
 
-<!-- ENCODE: File → Base96 -->
 <div class="box">
   <label>1. 바이너리 파일 선택 → Base96 인코딩</label>
   <input type="file" id="fileInput">
   <div id="status"></div>
   <button id="btnEncode" disabled>Encode to Base96</button>
-  <textarea id="encodedOutput" readonly placeholder="인코딩 결과가 여기에 표시됩니다..."></textarea>
+  <textarea id="encodedOutput" readonly placeholder="인코딩 결과 (파일명 포함)..."></textarea>
   <button id="btnCopy" disabled>Copy Encoded</button>
 </div>
 
-<hr style="border-color:#0f3460;">
+<hr style="border-color:#0f3460">
 
-<!-- DECODE: Base96 → File Download -->
 <div class="box">
-  <label>2. Base96 문자열 붙여넣기 → 바이너리 파일 복원</label>
-  <textarea id="decodeInput" placeholder="위에 복사한 Base96 문자열을 여기에 붙여넣으세요..."></textarea>
-  <button id="btnDecode">Decode & Download File</button>
+  <label>2. Base96 붙여넣기 → 원본 파일명으로 복원</label>
+  <textarea id="decodeInput" placeholder="복사한 Base96 문자열을 여기에..."></textarea>
+  <button id="btnDecode">Decode & Download</button>
   <div id="decodeStatus"></div>
 </div>
 
 <script>
-// ─── Base96 Charset (HTML-Safe: 94 printable + NBSP + Middle Dot) ───
+// ─── Base96 Core ───
 const CHARSET =
   '!\"#$%&\'()*+,-./0123456789:;<=>?@' +
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`' +
@@ -51,116 +48,105 @@ const CHARSET =
 const BASE = 96n;
 const CHAR_MAP = new Map([...CHARSET].map((c, i) => [c, BigInt(i)]));
 
-// ─── Core: bytes → Base96 string ───
 function base96Encode(bytes) {
   if (bytes.length === 0) return '';
-
-  let leadingZeros = 0;
-  for (const b of bytes) { if (b === 0) leadingZeros++; else break; }
-
+  let lz = 0;
+  for (const b of bytes) { if (b === 0) lz++; else break; }
   let num = 0n;
   for (const b of bytes) num = (num << 8n) | BigInt(b);
-
   const chars = [];
-  if (num === 0n && leadingZeros === 0) {
-    chars.push(CHARSET[0]);
-  } else {
-    while (num > 0n) {
-      chars.push(CHARSET[Number(num % BASE)]);
-      num /= BASE;
-    }
-  }
-  for (let i = 0; i < leadingZeros; i++) chars.push(CHARSET[0]);
-
+  if (num === 0n && lz === 0) chars.push(CHARSET[0]);
+  else while (num > 0n) { chars.push(CHARSET[Number(num % BASE)]); num /= BASE; }
+  for (let i = 0; i < lz; i++) chars.push(CHARSET[0]);
   return chars.reverse().join('');
 }
 
-// ─── Core: Base96 string → Uint8Array ───
 function base96Decode(encoded) {
   if (!encoded) return new Uint8Array(0);
-
-  let leadingZeros = 0;
-  let started = false;
-  let num = 0n;
-
+  let lz = 0, started = false, num = 0n;
   for (const ch of encoded) {
     const val = CHAR_MAP.get(ch);
-    if (val === undefined) throw new Error(`Invalid Base96 char: ${JSON.stringify(ch)} (U+${ch.codePointAt(0).toString(16).toUpperCase()})`);
-    if (!started && val === 0n) { leadingZeros++; continue; }
+    if (val === undefined) throw new Error(`Invalid char: U+${ch.codePointAt(0).toString(16).toUpperCase()}`);
+    if (!started && val === 0n) { lz++; continue; }
     started = true;
     num = num * BASE + val;
   }
-
-  const tempBytes = [];
-  if (num > 0n) {
-    while (num > 0n) {
-      tempBytes.push(Number(num & 0xFFn));
-      num >>= 8n;
-    }
-    tempBytes.reverse();
-  }
-
-  const result = new Uint8Array(leadingZeros + tempBytes.length);
-  result.set(tempBytes, leadingZeros);
-  return result;
+  const tmp = [];
+  if (num > 0n) { while (num > 0n) { tmp.push(Number(num & 0xFFn)); num >>= 8n; } tmp.reverse(); }
+  const res = new Uint8Array(lz + tmp.length);
+  res.set(tmp, lz);
+  return res;
 }
 
-// ─── UI Logic ───
-let loadedFile = null;
+// ─── 🆕 헤더 프로토콜: [filename_len(2B BE)][filename_bytes][file_bytes] ───
+function packWithName(fileName, fileBytes) {
+  const nameBytes = new TextEncoder().encode(fileName);
+  const len = nameBytes.length;
+  if (len > 65535) throw new Error('파일명이 너무 깁니다 (최대 65535바이트)');
+  const packed = new Uint8Array(2 + len + fileBytes.length);
+  packed[0] = (len >> 8) & 0xFF;
+  packed[1] = len & 0xFF;
+  packed.set(nameBytes, 2);
+  packed.set(fileBytes, 2 + len);
+  return packed;
+}
+
+function unpackWithName(packed) {
+  if (packed.length < 2) throw new Error('잘못된 Base96 데이터 (헤더 부족)');
+  const len = (packed[0] << 8) | packed[1];
+  if (packed.length < 2 + len) throw new Error('잘못된 Base96 데이터 (파일명 길이 불일치)');
+  const fileName = new TextDecoder().decode(packed.slice(2, 2 + len));
+  const fileBytes = packed.slice(2 + len);
+  return { fileName, fileBytes };
+}
+
+// ─── UI ───
 let loadedBytes = null;
+let loadedFileName = 'file.bin';
 
-const fileInput   = document.getElementById('fileInput');
-const btnEncode   = document.getElementById('btnEncode');
-const encodedOut  = document.getElementById('encodedOutput');
-const btnCopy     = document.getElementById('btnCopy');
-const statusEl    = document.getElementById('status');
+const fileInput  = document.getElementById('fileInput');
+const btnEncode  = document.getElementById('btnEncode');
+const encodedOut = document.getElementById('encodedOutput');
+const btnCopy    = document.getElementById('btnCopy');
+const statusEl   = document.getElementById('status');
+const decodeIn   = document.getElementById('decodeInput');
+const btnDecode  = document.getElementById('btnDecode');
+const decStatus  = document.getElementById('decodeStatus');
 
-const decodeInput  = document.getElementById('decodeInput');
-const btnDecode    = document.getElementById('btnDecode');
-const decodeStatus = document.getElementById('decodeStatus');
-
-// File 선택
 fileInput.addEventListener('change', () => {
   const file = fileInput.files[0];
   if (!file) { btnEncode.disabled = true; statusEl.textContent = ''; return; }
-
-  loadedFile = file;
-  statusEl.textContent = `읽는 중... (${(file.size / 1024).toFixed(1)} KB)`;
+  loadedFileName = file.name;                       // ← 원본 파일명 저장
+  statusEl.textContent = `읽는 중... (${(file.size/1024).toFixed(1)} KB)`;
   btnEncode.disabled = true;
-
   const reader = new FileReader();
   reader.onload = () => {
     loadedBytes = new Uint8Array(reader.result);
-    statusEl.textContent = `✅ ${file.name} — ${loadedBytes.length.toLocaleString()} bytes 로드 완료`;
+    statusEl.textContent = `✅ ${loadedFileName} — ${loadedBytes.length.toLocaleString()} bytes`;
     btnEncode.disabled = false;
   };
   reader.onerror = () => { statusEl.textContent = '❌ 파일 읽기 실패'; };
   reader.readAsArrayBuffer(file);
 });
 
-// Encode
 btnEncode.addEventListener('click', () => {
   if (!loadedBytes) return;
   statusEl.textContent = '⏳ 인코딩 중...';
   btnEncode.disabled = true;
-
-  // 대용량 대비 비동그 처리 (UI 블락 방지)
   setTimeout(() => {
     try {
       const t0 = performance.now();
-      const encoded = base96Encode(loadedBytes);
+      const packed = packWithName(loadedFileName, loadedBytes);  // ← 헤더 포함
+      const encoded = base96Encode(packed);
       const ms = (performance.now() - t0).toFixed(0);
       encodedOut.value = encoded;
       btnCopy.disabled = false;
-      statusEl.textContent = `✅ 인코딩 완료 — ${encoded.length.toLocaleString()} chars (${ms}ms)`;
-    } catch (e) {
-      statusEl.textContent = `❌ 인코딩 오류: ${e.message}`;
-    }
+      statusEl.textContent = `✅ "${loadedFileName}" 포함 인코딩 완료 — ${encoded.length.toLocaleString()} chars (${ms}ms)`;
+    } catch (e) { statusEl.textContent = `❌ ${e.message}`; }
     btnEncode.disabled = false;
   }, 10);
 });
 
-// Copy
 btnCopy.addEventListener('click', () => {
   navigator.clipboard.writeText(encodedOut.value).then(() => {
     btnCopy.textContent = '✅ Copied!';
@@ -168,32 +154,28 @@ btnCopy.addEventListener('click', () => {
   });
 });
 
-// Decode & Download
 btnDecode.addEventListener('click', () => {
-  const src = decodeInput.value;
-  if (!src.trim()) { decodeStatus.textContent = '⚠️ Base96 문자열을 붙여넣으세요.'; return; }
-
+  const src = decodeIn.value;
+  if (!src.trim()) { decStatus.textContent = '⚠️ Base96 문자열을 붙여넣으세요.'; return; }
   try {
-    decodeStatus.textContent = '⏳ 디코딩 중...';
+    decStatus.textContent = '⏳ 디코딩 중...';
     const t0 = performance.now();
-    const bytes = base96Decode(src);
+    const packed = base96Decode(src);
+    const { fileName, fileBytes } = unpackWithName(packed);     // ← 헤더에서 파일명 복원
     const ms = (performance.now() - t0).toFixed(0);
 
-    // Blob 다운로드
-    const blob = new Blob([bytes], { type: 'application/octet-stream' });
+    const blob = new Blob([fileBytes], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `decoded_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.bin`;
+    a.download = fileName;                                     // ← 원본 파일명 그대로
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    decodeStatus.textContent = `✅ ${bytes.length.toLocaleString()} bytes 복원 & 다운로드 시작 (${ms}ms)`;
-  } catch (e) {
-    decodeStatus.textContent = `❌ 디코딩 오류: ${e.message}`;
-  }
+    decStatus.textContent = `✅ "${fileName}" (${fileBytes.length.toLocaleString()} bytes) 다운로드 시작 (${ms}ms)`;
+  } catch (e) { decStatus.textContent = `❌ ${e.message}`; }
 });
 </script>
 </body>
