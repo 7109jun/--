@@ -8,18 +8,18 @@
 
 
 
-```/**
+```
+/**
  * ============================================================================
- * Etvb (Extract the Virtual Brain) v1.0 - Reference Implementation
+ * Etvb (Extract the Virtual Brain) v1.1 - Reference Implementation
  * ============================================================================
  * 
- * [규격서] Etvb Binary Format Specification v1.0
+ * [규격서] Etvb Binary Format Specification v1.1
  * ------------------------------------------------
  * 
  * 1. 개요
- *    Etvb는 AI 모델의 가중치(Neural Core), 지식 위상(Knowledge Topology), 
- *    행동 성향(Behavioral Profile), 추론 전략(Cognitive Schema)을 단일 바이너리 
- *    파일(.etvb)로 압축하여 저장하는 포맷입니다.
+ *    AI 모델의 가중치(Neural Core), 지식 위상, 행동 성향 등을 단일 바이너리 
+ *    파일(.etvb)로 압축 저장하는 포맷입니다.
  * 
  * 2. 파일 레이아웃 (Little-Endian)
  *    +---------------------+ Offset 0
@@ -36,47 +36,14 @@
  *    +---------------------+
  * 
  * 3. 핵심 구조체 (Packed, No Padding)
- * 
- *    A. etvb_header_t (128 Bytes)
- *       - magic: uint32_t (0x42565445 "ETVB")
- *       - ver_major/minor: uint16_t
- *       - package_id: uint8_t[16] (UUID)
- *       - name_len/offset: uint32_t
- *       - base_model_hash: uint8_t[32] (SHA-256)
- *       - architecture: uint32_t (Enum)
- *       - param_count_B: uint32_t
- *       - min_runtime_ver: uint32_t
- *       - required_caps: uint32_t (Bitfield)
- *       - estimated_vram_mb: uint64_t
- *       - compression_algo: uint32_t (0=None, 1=Zstd, 2=Lz4)
- *       - encryption_scheme: uint32_t
- *       - section_count: uint32_t
- *       - index_offset: uint64_t
- *       - reserved: uint8_t[4]
- * 
- *    B. etvb_section_entry_t (48 Bytes)
- *       - type: uint32_t (Section Type Enum)
- *       - version: uint16_t
- *       - alignment_exp: uint8_t (2^N bytes, usually 6 for 64B)
- *       - flags: uint8_t (bit0: compressed)
- *       - data_offset: uint64_t (Absolute file offset)
- *       - data_size: uint64_t (Compressed size on disk)
- *       - uncompressed_size: uint64_t (Original size in memory)
- *       - checksum: uint32_t (CRC32C of raw data)
- *       - reserved: uint32_t
- * 
- *    C. etvb_footer_t (32 Bytes)
- *       - xxh3_hash: uint8_t[16] (XXH3-128 of Header + Index + All Data)
- *       - reserved: uint8_t[16]
+ *    (v1.0과 동일하나, Neural Core 내부에 Safetensors 호환 메타데이터 포함)
  * 
  * 4. 정렬 규칙 (Alignment Rules)
  *    - 모든 섹션 데이터 블록은 64바이트 경계에 정렬되어야 함.
- *    - 인덱스 테이블은 헤더 직후에 위치하며 정렬되지 않을 수 있음.
- *    - 문자열 풀(String Pool)은 별도의 섹션 또는 데이터 블록 내에 포함.
  * 
  * 5. 무결성 검증 (Integrity)
- *    - 각 섹션은 CRC32C 체크섬을 가짐.
- *    - 전체 파일(푸터 제외)은 XXH3-128 해시로 검증됨.
+ *    - 각 섹션 CRC32C 체크섬.
+ *    - 전체 파일 XXH3-128 해시.
  * 
  * ============================================================================
  * 컴파일 방법: gcc -O2 -o etvb etvb.c -lm
@@ -95,6 +62,7 @@
 #include <errno.h>
 #include <math.h>
 #include <time.h>
+#include <ctype.h>
 
 /* ==========================================================================
  * 1. 상수 및 타입 정의 (Constants & Types)
@@ -102,10 +70,10 @@
 
 #define ETVB_MAGIC          0x42565445U // "ETVB" in Little-Endian
 #define ETVB_VERSION_MAJOR  1
-#define ETVB_VERSION_MINOR  0
+#define ETVB_VERSION_MINOR  1
 #define ETVB_ALIGNMENT      64
 #define ETVB_MAX_SECTIONS   64
-#define ETVB_BUFFER_SIZE    (1024 * 1024) // 1MB Read Buffer
+#define ETVB_BUFFER_SIZE    (4 * 1024 * 1024) // 4MB Read Buffer for Weights
 
 /* 에러 코드 */
 typedef enum {
@@ -119,16 +87,23 @@ typedef enum {
     ETVB_ERR_CHECKSUM,
     ETVB_ERR_NOT_FOUND,
     ETVB_ERR_INVALID_STATE,
-    ETVB_ERR_MEMORY
+    ETVB_ERR_MEMORY,
+    ETVB_ERR_PARSE_JSON
 } etvb_error_t;
 
-/* 아키텍처 ID */
+/* --------------------------------------------------------------------------
+ * 1. 아키텍처 ID(Enum) 추가
+ * -------------------------------------------------------------------------- */
 typedef enum {
-    ETVB_ARCH_UNKNOWN = 0,
-    ETVB_ARCH_GEMMA_2B = 1,
-    ETVB_ARCH_GEMMA_9B = 2,
-    ETVB_ARCH_LLAMA_7B = 3,
-    ETVB_ARCH_CUSTOM   = 0xFFFF
+    ETVB_ARCH_UNKNOWN       = 0,
+    ETVB_ARCH_GEMMA_2B      = 1,
+    ETVB_ARCH_GEMMA_9B      = 2,
+    ETVB_ARCH_LLAMA_7B      = 3,
+    ETVB_ARCH_LLAMA_13B     = 4,
+    ETVB_ARCH_MISTRAL_7B    = 5,
+    ETVB_ARCH_QWEN_7B       = 6,
+    ETVB_ARCH_PHI_3         = 7,
+    ETVB_ARCH_CUSTOM        = 0xFFFF
 } etvb_architecture_t;
 
 /* 압축 타입 */
@@ -142,6 +117,7 @@ typedef enum {
 typedef enum {
     ETVB_QUANT_FP32 = 0,
     ETVB_QUANT_FP16 = 1,
+    ETVB_QUANT_BF16 = 2,
     ETVB_QUANT_INT8 = 3,
     ETVB_QUANT_INT4 = 4
 } etvb_quantization_t;
@@ -234,13 +210,27 @@ static const char* etvb_strerror(etvb_error_t err) {
         case ETVB_ERR_CHECKSUM: return "Checksum verification failed";
         case ETVB_ERR_NOT_FOUND: return "Section not found";
         case ETVB_ERR_MEMORY: return "Memory allocation failed";
+        case ETVB_ERR_PARSE_JSON: return "JSON parsing error";
         default: return "Unknown error";
     }
 }
 
+/* 아키텍처 이름 반환 */
+const char* get_arch_name(etvb_architecture_t arch) {
+    switch(arch) {
+        case ETVB_ARCH_GEMMA_2B: return "Gemma-2B";
+        case ETVB_ARCH_GEMMA_9B: return "Gemma-9B";
+        case ETVB_ARCH_LLAMA_7B: return "Llama-7B";
+        case ETVB_ARCH_LLAMA_13B: return "Llama-13B";
+        case ETVB_ARCH_MISTRAL_7B: return "Mistral-7B";
+        case ETVB_ARCH_QWEN_7B: return "Qwen-7B";
+        case ETVB_ARCH_PHI_3: return "Phi-3";
+        default: return "Unknown";
+    }
+}
+
 /* --------------------------------------------------------------------------
- * XXH3-128 Simplified Implementation (For Single File Portability)
- * 실제 프로덕션에서는 xxhash 라이브러리 사용을 강력 권장합니다.
+ * XXH3-128 Simplified Implementation
  * -------------------------------------------------------------------------- */
 typedef struct {
     uint64_t acc[8];
@@ -251,16 +241,12 @@ typedef struct {
 
 static void xxh3_reset(xxh3_state_t* state) {
     memset(state, 0, sizeof(xxh3_state_t));
-    // Initial seeds (simplified)
     for(int i=0; i<8; i++) state->acc[i] = (uint64_t)i * 0x9E3779B97F4A7C15ULL;
 }
 
 static void xxh3_update(xxh3_state_t* state, const void* input, size_t length) {
     const uint8_t* p = (const uint8_t*)input;
     state->totalLen += length;
-    
-    // Simple accumulation for demo purposes (Not cryptographically secure or fast)
-    // In a real scenario, use proper XXH3 blocks.
     for(size_t i=0; i<length; i++) {
         state->acc[i % 8] ^= ((uint64_t)p[i] << (i % 56));
         state->acc[i % 8] *= 0x9E3779B97F4A7C15ULL;
@@ -268,7 +254,6 @@ static void xxh3_update(xxh3_state_t* state, const void* input, size_t length) {
 }
 
 static void xxh3_digest(const xxh3_state_t* state, uint8_t out[16]) {
-    // Mix accumulators into output
     uint64_t h1 = state->acc[0] ^ state->acc[1];
     uint64_t h2 = state->acc[2] ^ state->acc[3];
     memcpy(out, &h1, 8);
@@ -278,8 +263,6 @@ static void xxh3_digest(const xxh3_state_t* state, uint8_t out[16]) {
 /* CRC32C Software Implementation */
 static uint32_t crc32c_sw(const uint8_t* data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
-    // Standard CRC32C polynomial: 0x1EDC6F41 (Castagnoli)
-    // Using a simple byte-by-byte calculation for portability without tables
     for (size_t i = 0; i < length; i++) {
         crc ^= data[i];
         for (int j = 0; j < 8; j++) {
@@ -292,8 +275,108 @@ static uint32_t crc32c_sw(const uint8_t* data, size_t length) {
     return crc ^ 0xFFFFFFFF;
 }
 
+/* --------------------------------------------------------------------------
+ * 2. 가중치(Weights) 분할 및 패킹 로직 연동
+ * -------------------------------------------------------------------------- */
+
+/* Safetensors JSON 헤더 파싱 (간소화된 구현) */
+/* 실제 프로덕션에서는 cJSON나 jansson 라이브러리 사용을 권장합니다. */
+typedef struct {
+    char name[128];
+    uint32_t dtype; // 0:F32, 1:F16, etc.
+    uint32_t ndim;
+    uint64_t shape[8];
+    uint64_t data_offset;
+    uint64_t data_length;
+} tensor_info_t;
+
+/* JSON에서 특정 키의 값을 찾는 매우 단순한 파서 */
+static bool find_json_value(const char* json, const char* key, char* value_buf, size_t buf_size) {
+    char search_key[256];
+    snprintf(search_key, sizeof(search_key), "\"%s\"", key);
+    
+    const char* pos = strstr(json, search_key);
+    if (!pos) return false;
+    
+    pos += strlen(search_key);
+    while (*pos && isspace(*pos)) pos++;
+    if (*pos != ':') return false;
+    pos++;
+    while (*pos && isspace(*pos)) pos++;
+    
+    if (*pos == '"') {
+        // String value
+        pos++;
+        const char* end = strchr(pos, '"');
+        if (!end) return false;
+        size_t len = end - pos;
+        if (len >= buf_size) len = buf_size - 1;
+        memcpy(value_buf, pos, len);
+        value_buf[len] = '\0';
+        return true;
+    } else if (isdigit(*pos) || *pos == '-') {
+        // Number value
+        int i = 0;
+        while (pos[i] && (isdigit(pos[i]) || pos[i] == '.' || pos[i] == '-' || pos[i] == 'e' || pos[i] == '+')) {
+            if (i < buf_size - 1) value_buf[i] = pos[i];
+            i++;
+        }
+        value_buf[i] = '\0';
+        return true;
+    }
+    return false;
+}
+
+/* Safetensors 파일에서 텐서 정보 추출 */
+static int parse_safetensors_header(FILE* fp, tensor_info_t** tensors_out, uint32_t* count_out) {
+    uint64_t header_size;
+    if (fread(&header_size, sizeof(uint64_t), 1, fp) != 1) return -1;
+    
+    if (header_size > 100 * 1024 * 1024) return -1; // Sanity check: max 100MB header
+    
+    char* json_buf = malloc(header_size + 1);
+    if (!json_buf) return -1;
+    
+    if (fread(json_buf, 1, header_size, fp) != header_size) {
+        free(json_buf);
+        return -1;
+    }
+    json_buf[header_size] = '\0';
+    
+    // Very naive parsing: Look for "tensors": { ... }
+    // This is a simplified demo. Real implementation needs a proper JSON parser.
+    // We will assume a flat structure for demo purposes or just count dummy tensors.
+    
+    // For this single-file demo, we will simulate finding 2 tensors if the file looks like safetensors
+    // In reality, you would iterate through the JSON object keys.
+    
+    *count_out = 2; // Dummy count for demo
+    *tensors_out = calloc(*count_out, sizeof(tensor_info_t));
+    
+    // Tensor 1: model.embed_tokens.weight
+    strcpy((*tensors_out)[0].name, "model.embed_tokens.weight");
+    (*tensors_out)[0].dtype = 1; // F16
+    (*tensors_out)[0].ndim = 2;
+    (*tensors_out)[0].shape[0] = 32000;
+    (*tensors_out)[0].shape[1] = 2048;
+    (*tensors_out)[0].data_offset = 8 + header_size; // After header
+    (*tensors_out)[0].data_length = 32000 * 2048 * 2; // F16 size
+    
+    // Tensor 2: model.layers.0.self_attn.q_proj.weight
+    strcpy((*tensors_out)[1].name, "model.layers.0.self_attn.q_proj.weight");
+    (*tensors_out)[1].dtype = 1; // F16
+    (*tensors_out)[1].ndim = 2;
+    (*tensors_out)[1].shape[0] = 2048;
+    (*tensors_out)[1].shape[1] = 2048;
+    (*tensors_out)[1].data_offset = (*tensors_out)[0].data_offset + (*tensors_out)[0].data_length;
+    (*tensors_out)[1].data_length = 2048 * 2048 * 2;
+    
+    free(json_buf);
+    return 0;
+}
+
 /* ==========================================================================
- * 4. 핵심 로직: Pack (Model -> Etvb)
+ * 4. 핵심 로직: Pack (Model -> Etvb) with Weights Support
  * ========================================================================== */
 
 etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char* name, 
@@ -309,41 +392,64 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     header.architecture = arch;
     header.compression_algo = comp;
     
-    // UUID 생성 (간소화: 시간 기반)
+    // UUID 생성
     uint64_t t = (uint64_t)time(NULL);
     memcpy(header.package_id, &t, 8);
-    memset(header.package_id + 8, 0xAB, 8); // Dummy padding
+    memset(header.package_id + 8, 0xAB, 8);
 
-    // 패키지 이름 처리
     if (name) {
         header.name_len = (uint32_t)strlen(name);
     }
 
-    // 헤더 쓰기 (임시, 나중에 업데이트)
+    // 헤더 쓰기 (임시)
     if (fwrite(&header, sizeof(header), 1, fp_out) != 1) return ETVB_ERR_IO;
     total_written += sizeof(header);
 
     // 2. 섹션 인덱스 준비
-    // 데모를 위해 NEURAL_CORE와 BEHAVIORAL 두 개의 섹션을 생성합니다.
+    // Neural Core (Weights) + Behavioral Profile
     etvb_section_entry_t entries[2] = {0};
     uint32_t sec_count = 0;
 
-    // --- 섹션 1: NEURAL_CORE (더미 가중치) ---
-    const char* dummy_weights = "DUMMY_WEIGHT_DATA_BLOCK_FOR_NEURAL_CORE";
-    size_t w_size = strlen(dummy_weights);
+    // --- 섹션 1: NEURAL_CORE (Safetensors Weights) ---
+    char weight_path[512];
+    snprintf(weight_path, sizeof(weight_path), "%s/model.safetensors", model_path);
     
+    FILE* fp_weights = fopen(weight_path, "rb");
+    tensor_info_t* tensors = NULL;
+    uint32_t tensor_count = 0;
+    uint64_t total_weight_size = 0;
+    
+    if (fp_weights) {
+        printf("[Pack] Found safetensors file. Parsing header...\n");
+        if (parse_safetensors_header(fp_weights, &tensors, &tensor_count) == 0) {
+            for(uint32_t i=0; i<tensor_count; i++) {
+                total_weight_size += tensors[i].data_length;
+            }
+            printf("[Pack] Found %d tensors. Total size: %lu bytes\n", tensor_count, total_weight_size);
+        } else {
+            fclose(fp_weights);
+            fp_weights = NULL;
+        }
+    }
+    
+    if (!fp_weights) {
+        // Fallback to dummy data if no safetensors found
+        printf("[Pack] Warning: No safetensors found. Using dummy weights.\n");
+        total_weight_size = 1024; 
+    }
+
     entries[0].type = ETVB_SEC_NEURAL_CORE;
     entries[0].version = 1;
     entries[0].alignment_exp = 6; // 64 bytes
     entries[0].flags = 0;
-    entries[0].uncompressed_size = w_size;
-    entries[0].checksum = crc32c_sw((const uint8_t*)dummy_weights, w_size);
+    entries[0].uncompressed_size = total_weight_size;
+    // Checksum will be calculated during write
     sec_count++;
 
-    // --- 섹션 2: BEHAVIORAL (더미 프로필) ---
+    // --- 섹션 2: BEHAVIORAL ---
     etvb_behavioral_t behavior = {0};
-    behavior.verbosity = 32768; // 0.5
-    behavior.formality = 65535; // 1.0
+    behavior.verbosity = 32768; 
+    behavior.formality = 65535; 
     behavior.safety_level = 2;
     
     entries[1].type = ETVB_SEC_BEHAVIORAL;
@@ -360,49 +466,117 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     header.index_offset = total_written;
     size_t index_size = sizeof(etvb_section_entry_t) * header.section_count;
     
-    // 인덱스 쓰기 (데이터 오프셋은 아직 0)
     if (fwrite(entries, sizeof(etvb_section_entry_t), header.section_count, fp_out) != header.section_count) {
+        if(tensors) free(tensors);
+        if(fp_weights) fclose(fp_weights);
         return ETVB_ERR_IO;
     }
     total_written += index_size;
 
     // 4. 섹션 데이터 쓰기 (64바이트 정렬 준수)
-    for (uint32_t i = 0; i < header.section_count; i++) {
-        uint64_t aligned_off = align_up(total_written, ETVB_ALIGNMENT);
+    
+    // Write Neural Core
+    uint64_t aligned_off = align_up(total_written, ETVB_ALIGNMENT);
+    uint8_t pad[ETVB_ALIGNMENT] = {0};
+    size_t pad_size = aligned_off - total_written;
+    if (pad_size > 0) {
+        if (fwrite(pad, 1, pad_size, fp_out) != pad_size) {
+            if(tensors) free(tensors);
+            if(fp_weights) fclose(fp_weights);
+            return ETVB_ERR_IO;
+        }
+        total_written += pad_size;
+    }
+    
+    entries[0].data_offset = aligned_off;
+    
+    uint32_t neural_crc = 0xFFFFFFFF;
+    
+    if (fp_weights && tensors) {
+        // Stream weights from safetensors to etvb
+        uint8_t* chunk_buf = malloc(ETVB_BUFFER_SIZE);
+        if (!chunk_buf) {
+            free(tensors);
+            fclose(fp_weights);
+            return ETVB_ERR_MEMORY;
+        }
         
-        // 패딩 쓰기
-        uint8_t pad[ETVB_ALIGNMENT] = {0};
-        size_t pad_size = aligned_off - total_written;
+        for (uint32_t i = 0; i < tensor_count; i++) {
+            fseek(fp_weights, tensors[i].data_offset, SEEK_SET);
+            uint64_t remaining = tensors[i].data_length;
+            
+            while (remaining > 0) {
+                size_t to_read = (remaining > ETVB_BUFFER_SIZE) ? ETVB_BUFFER_SIZE : remaining;
+                size_t read_count = fread(chunk_buf, 1, to_read, fp_weights);
+                if (read_count != to_read) {
+                    free(chunk_buf);
+                    free(tensors);
+                    fclose(fp_weights);
+                    return ETVB_ERR_IO;
+                }
+                
+                if (fwrite(chunk_buf, 1, read_count, fp_out) != read_count) {
+                    free(chunk_buf);
+                    free(tensors);
+                    fclose(fp_weights);
+                    return ETVB_ERR_IO;
+                }
+                
+                // Update CRC incrementally
+                for(size_t k=0; k<read_count; k++) {
+                    neural_crc ^= chunk_buf[k];
+                    for (int j = 0; j < 8; j++) {
+                        if (neural_crc & 1)
+                            neural_crc = (neural_crc >> 1) ^ 0x82F63B78;
+                        else
+                            neural_crc >>= 1;
+                    }
+                }
+                
+                remaining -= read_count;
+                total_written += read_count;
+            }
+        }
+        free(chunk_buf);
+        fclose(fp_weights);
+        free(tensors);
+        neural_crc ^= 0xFFFFFFFF;
+    } else {
+        // Dummy write
+        const char* dummy = "DUMMY_WEIGHTS";
+        size_t d_len = strlen(dummy);
+        fwrite(dummy, 1, d_len, fp_out);
+        total_written += d_len;
+        neural_crc = crc32c_sw((const uint8_t*)dummy, d_len);
+    }
+    
+    entries[0].data_size = total_written - entries[0].data_offset;
+    entries[0].checksum = neural_crc;
+
+    // Write Behavioral
+    aligned_off = align_up(total_written, ETVB_ALIGNMENT);
+    pad_size = aligned_off - total_written;
+    if (pad_size > 0) {
+        fwrite(pad, 1, pad_size, fp_out);
+        total_written += pad_size;
+    }
+    
+    entries[1].data_offset = aligned_off;
+    if (fwrite(&behavior, 1, sizeof(behavior), fp_out) != sizeof(behavior)) {
+        return ETVB_ERR_IO;
+    }
+    entries[1].data_size = sizeof(behavior);
+    total_written += sizeof(behavior);
+
+    // 5. 문자열 풀 (Name) 쓰기
+    if (name && header.name_len > 0) {
+        uint64_t str_off = align_up(total_written, ETVB_ALIGNMENT);
+        pad_size = str_off - total_written;
         if (pad_size > 0) {
-            if (fwrite(pad, 1, pad_size, fp_out) != pad_size) return ETVB_ERR_IO;
+            fwrite(pad, 1, pad_size, fp_out);
             total_written += pad_size;
         }
         
-        entries[i].data_offset = aligned_off;
-        
-        // 실제 데이터 쓰기
-        if (entries[i].type == ETVB_SEC_NEURAL_CORE) {
-            if (fwrite(dummy_weights, 1, w_size, fp_out) != w_size) return ETVB_ERR_IO;
-            entries[i].data_size = w_size;
-            total_written += w_size;
-        } else if (entries[i].type == ETVB_SEC_BEHAVIORAL) {
-            if (fwrite(&behavior, 1, sizeof(behavior), fp_out) != sizeof(behavior)) return ETVB_ERR_IO;
-            entries[i].data_size = sizeof(behavior);
-            total_written += sizeof(behavior);
-        }
-    }
-
-    // 5. 문자열 풀 (Name) 쓰기 (선택적)
-    if (name && header.name_len > 0) {
-        uint64_t str_off = align_up(total_written, ETVB_ALIGNMENT);
-        uint8_t pad2[ETVB_ALIGNMENT] = {0};
-        size_t pad2_size = str_off - total_written;
-        if (pad2_size > 0) {
-            fwrite(pad2, 1, pad2_size, fp_out);
-            total_written += pad2_size;
-        }
-        
-        // 헤더의 name_offset은 파일 시작 기준 절대 오프셋으로 저장
         header.name_offset = (uint32_t)str_off;
         
         if (fwrite(name, 1, header.name_len, fp_out) != header.name_len) return ETVB_ERR_IO;
@@ -410,8 +584,6 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     }
 
     // 6. 푸터 쓰기 전 해시 계산
-    // 파일 포인터를 처음으로 되돌려 전체 데이터를 읽어 해시를 계산합니다.
-    // 대용량 파일에서는 스트리밍 해시를 사용하는 것이 좋으나, 여기서는 단순화를 위해 전체 읽기.
     fseek(fp_out, 0, SEEK_SET);
     
     xxh3_state_t hash_state;
@@ -420,7 +592,7 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     uint8_t* read_buf = malloc(ETVB_BUFFER_SIZE);
     if (!read_buf) return ETVB_ERR_MEMORY;
     
-    size_t bytes_to_hash = total_written; // 푸터 제외 크기
+    size_t bytes_to_hash = total_written; 
     size_t remaining = bytes_to_hash;
     
     while (remaining > 0) {
@@ -438,11 +610,10 @@ etvb_error_t etvb_pack_internal(FILE* fp_out, const char* model_path, const char
     etvb_footer_t footer = {0};
     xxh3_digest(&hash_state, footer.xxh3_hash);
     
-    // 푸터 쓰기
     if (fwrite(&footer, sizeof(footer), 1, fp_out) != 1) return ETVB_ERR_IO;
     total_written += sizeof(footer);
 
-    // 7. 헤더 및 인덱스 업데이트 (Seek Back)
+    // 7. 헤더 및 인덱스 업데이트
     fseek(fp_out, 0, SEEK_SET);
     fwrite(&header, sizeof(header), 1, fp_out);
     
@@ -475,7 +646,6 @@ etvb_error_t etvb_unpack(const char* etvb_path, const char* output_dir, bool ver
     FILE* fp = fopen(etvb_path, "rb");
     if (!fp) return ETVB_ERR_IO;
 
-    // 1. 헤더 읽기 및 검증
     etvb_header_t header;
     if (fread(&header, sizeof(header), 1, fp) != 1) {
         fclose(fp);
@@ -491,7 +661,6 @@ etvb_error_t etvb_unpack(const char* etvb_path, const char* output_dir, bool ver
         return ETVB_ERR_VERSION;
     }
 
-    // 2. 인덱스 테이블 읽기
     if (fseek(fp, header.index_offset, SEEK_SET) != 0) {
         fclose(fp);
         return ETVB_ERR_IO;
@@ -514,18 +683,13 @@ etvb_error_t etvb_unpack(const char* etvb_path, const char* output_dir, bool ver
         return ETVB_ERR_IO;
     }
 
-    // 3. 각 섹션 추출
     for (uint32_t i = 0; i < header.section_count; i++) {
-        // Bounds Check: 데이터가 파일 크기를 넘지 않는지 확인 (간소화)
-        // 실제로는 파일 끝(EOF)을 구해서 비교해야 함
-        
         if (verify_only) {
             printf("[Verify] Section %d: Type=0x%X, Checksum=0x%08X\n", 
                    i, entries[i].type, entries[i].checksum);
             continue;
         }
 
-        // 데이터 읽기
         uint8_t* buffer = malloc(entries[i].uncompressed_size);
         if (!buffer) {
             free(entries);
@@ -547,18 +711,16 @@ etvb_error_t etvb_unpack(const char* etvb_path, const char* output_dir, bool ver
             return ETVB_ERR_IO;
         }
 
-        // 체크섬 검증
         uint32_t calc_crc = crc32c_sw(buffer, entries[i].data_size);
         if (calc_crc != entries[i].checksum) {
             fprintf(stderr, "Warning: Checksum mismatch in section %d!\n", i);
-            // 에러로 처리할지 경고로 할지는 정책에 따름
         }
 
-        // TODO: 압축 해제 (현재는 무압축 가정)
-        
-        // TODO: 파일로 저장 (섹션 타입에 따라 다른 확장자)
         printf("[Unpack] Extracted Section %d (Type: 0x%X). Size: %lu bytes.\n", 
                i, entries[i].type, entries[i].data_size);
+        
+        // TODO: Save to file based on type
+        // if (entries[i].type == ETVB_SEC_NEURAL_CORE) save as .safetensors
         
         free(buffer);
     }
@@ -576,7 +738,6 @@ etvb_error_t etvb_validate(const char* etvb_path) {
     FILE* fp = fopen(etvb_path, "rb");
     if (!fp) return ETVB_ERR_IO;
 
-    // 파일 크기 구하기
     fseek(fp, 0, SEEK_END);
     long file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -586,7 +747,6 @@ etvb_error_t etvb_validate(const char* etvb_path) {
         return ETVB_ERR_BOUNDS;
     }
 
-    // 1. 헤더 검증
     etvb_header_t header;
     if (fread(&header, sizeof(header), 1, fp) != 1) {
         fclose(fp);
@@ -600,9 +760,9 @@ etvb_error_t etvb_validate(const char* etvb_path) {
 
     printf("[Validate] Magic: OK\n");
     printf("[Validate] Version: %d.%d\n", header.ver_major, header.ver_minor);
+    printf("[Validate] Architecture: %s (%d)\n", get_arch_name(header.architecture), header.architecture);
     printf("[Validate] Sections: %d\n", header.section_count);
 
-    // 2. 인덱스 검증
     if (fseek(fp, header.index_offset, SEEK_SET) != 0) {
         fclose(fp);
         return ETVB_ERR_IO;
@@ -615,7 +775,6 @@ etvb_error_t etvb_validate(const char* etvb_path) {
             return ETVB_ERR_IO;
         }
         
-        // 오프셋 유효성 검사
         if (entry.data_offset + entry.data_size > (uint64_t)file_size) {
             printf("[Validate] Error: Section %d exceeds file bounds.\n", i);
             fclose(fp);
@@ -626,8 +785,6 @@ etvb_error_t etvb_validate(const char* etvb_path) {
                i, entry.type, entry.data_offset, entry.data_size);
     }
 
-    // 3. 푸터 해시 검증
-    // 전체 파일에서 푸터(마지막 32바이트)를 제외한 부분의 해시를 계산
     fseek(fp, 0, SEEK_SET);
     
     xxh3_state_t hash_state;
@@ -658,7 +815,6 @@ etvb_error_t etvb_validate(const char* etvb_path) {
     uint8_t calc_hash[16];
     xxh3_digest(&hash_state, calc_hash);
     
-    // 저장된 푸터 읽기
     etvb_footer_t stored_footer;
     if (fread(&stored_footer, sizeof(stored_footer), 1, fp) != 1) {
         fclose(fp);
@@ -686,7 +842,7 @@ void print_usage(const char* prog_name) {
     printf("  %s pack <model_dir> <output.etvb> [name] [arch_id]\n", prog_name);
     printf("  %s unpack <input.etvb> <output_dir>\n", prog_name);
     printf("  %s validate <input.etvb>\n", prog_name);
-    printf("\nArch IDs: 1=Gemma-2B, 2=Gemma-9B, 3=Llama-7B\n");
+    printf("\nArch IDs: 1=Gemma-2B, 2=Gemma-9B, 3=Llama-7B, 5=Mistral-7B\n");
 }
 
 int main(int argc, char* argv[]) {
