@@ -1,6 +1,6 @@
 <img width="1185" height="1187" alt="스크린샷 2026-08-11 115815" src="https://github.com/user-attachments/assets/e16fe397-8226-479b-a579-84affab3ac68" />
-# 엄청난것입니다 
-```#pragma once
+``` 
+#pragma once
 
 #include <cstdint>
 #include <vector>
