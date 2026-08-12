@@ -1,5 +1,18 @@
 <img width="1214" height="1096" alt="스크린샷 2026-08-12 125028" src="https://github.com/user-attachments/assets/0c7d091d-926a-469d-9393-16c1c1a5b196" />
+
+
 게임 파일 폴더 뭐시깽이.
+
+
+
+
+
+
+
+
+
+
+
 ```<!DOCTYPE html>
 <html lang="ko">
 <head>
