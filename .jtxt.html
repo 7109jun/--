@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JTXT — Yunocode Text Editor</title>
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:#111318;color:#e8eaf0;
+  font-family:system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+  display:flex;flex-direction:column;overflow:hidden
+}
+header{
+  height:50px;display:flex;align-items:center;gap:7px;padding:0 12px;
+  background:#181b22;border-bottom:1px solid #2c313c
+}
+.logo{font-weight:800;margin-right:8px;letter-spacing:.3px}
+.logo span{color:#69b7ff}
+button,select,input{
+  background:#222731;color:#e8eaf0;border:1px solid #363d49;
+  border-radius:6px;padding:7px 9px
+}
+button{cursor:pointer}
+button:hover{background:#2b313d}
+input{outline:none}
+.main{flex:1;display:flex;min-height:0}
+.editorArea{flex:1;display:flex;min-width:0}
+#editor{
+  width:100%;height:100%;resize:none;border:0;outline:0;
+  background:#0d0f14;color:#f1f3f7;padding:22px;
+  font:18px/1.65 "Cascadia Mono","Consolas","Noto Sans",monospace;
+  tab-size:4;white-space:pre-wrap
+}
+.side{
+  width:370px;min-width:300px;background:#171a20;
+  border-left:1px solid #2c313c;display:flex;flex-direction:column;
+  overflow:hidden
+}
+.panel{padding:12px;border-bottom:1px solid #2c313c}
+.panel h3{margin:0 0 8px;font-size:12px;color:#9da6b6}
+.value{
+  background:#0d0f14;border:1px solid #303642;border-radius:6px;
+  padding:8px;word-break:break-all;font-family:monospace
+}
+#glyph{font-size:48px;min-height:62px;display:flex;align-items:center}
+#yunocode{color:#69b7ff}
+#category{color:#aeb6c4}
+#stats{font:12px/1.6 monospace;color:#b9c1ce;white-space:pre-wrap}
+.paletteHead{display:flex;gap:6px}
+#search{flex:1;min-width:0}
+#palette{
+  display:flex;gap:4px;flex-wrap:wrap;
+  max-height:330px;overflow:auto;margin-top:8px
+}
+#palette button{font-size:18px;padding:4px 7px;min-width:32px}
+#paletteInfo{font:11px monospace;color:#858e9e;margin-top:7px}
+.status{
+  height:30px;padding:0 12px;display:flex;align-items:center;
+  background:#181b22;border-top:1px solid #2c313c;
+  color:#929baa;font:12px monospace
+}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">JTXT <span>/</span> Yunocode</div>
+  <button id="newBtn">새 문서</button>
+  <button id="openBtn">열기</button>
+  <button id="saveBtn">JTXT 저장</button><button id="downloadBtn">JTXT 다운로드</button><button id="downloadMapBtn">Yunocode 목록</button>
+  <button id="txtBtn">TXT 저장</button>
+  <select id="font">
+    <option value="mono">Monospace</option>
+    <option value="system">System</option>
+    <option value="serif">Serif</option>
+  </select>
+  <input id="fileInput" class="hidden" type="file" accept=".jtxt,.txt">
+</header>
+
+<div class="main">
+  <div class="editorArea">
+    <textarea id="editor" spellcheck="false" placeholder="JTXT 문서를 입력하세요."></textarea>
+  </div>
+
+  <aside class="side">
+    <div class="panel">
+      <h3>현재 문자</h3>
+      <div id="glyph" class="value">—</div>
+      <div id="yunocode" class="value">J-????????</div>
+      <div id="category" class="value">문자 없음</div>
+    </div>
+
+    <div class="panel">
+      <h3>문서 정보</h3>
+      <div id="stats"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Yunocode 문자 팔레트</h3>
+      <div class="paletteHead">
+        <input id="search" placeholder="문자 검색 / 입력">
+        <select id="group"></select>
+      </div>
+      <div id="palette"></div>
+      <div id="paletteInfo"></div>
+    </div>
+  </aside>
+</div>
+
+<div id="status" class="status">Yunocode 초기화 중...</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   YUNOCODE
+   형식: J-XXXXXXXX
+   X는 A-Z 26진수.
+   각 문자 영역은 독립적인 10억 슬롯을 예약한다.
+   ============================================================ */
+
+const REGION_SIZE = 1000000000n;
+const BASE = 26n;
+
+function encode26(n){
+  let out="";
+  for(let i=0;i<8;i++){
+    out=String.fromCharCode(65+Number(n%BASE))+out;
+    n/=BASE;
+  }
+  return out;
+}
+function makeYunocode(region,index){
+  return "J-"+encode26(BigInt(region)*REGION_SIZE+BigInt(index));
+}
+
+/* ------------------------------------------------------------
+   영역
+   ------------------------------------------------------------ */
+const GROUPS=[
+  ["제어/공백","CONTROL"],
+  ["미국 영어 대문자","US_UPPER"],
+  ["미국 영어 소문자","US_LOWER"],
+  ["숫자","DIGIT"],
+  ["스페인어","SPANISH"],
+  ["한글 자모","KOREAN_JAMO"],
+  ["한글 완성형","KOREAN"],
+  ["일본어 히라가나","JAPANESE_HIRAGANA"],
+  ["일본어 가타카나","JAPANESE_KATAKANA"],
+  ["일본어 반각 가타카나","JAPANESE_HALFWIDTH"],
+  ["중국어/일본어 한자","CJK"],
+  ["그리스어","GREEK"],
+  ["키릴 문자","CYRILLIC"],
+  ["히브리어","HEBREW"],
+  ["아랍어","ARABIC"],
+  ["데바나가리","DEVANAGARI"],
+  ["벵골어","BENGALI"],
+  ["인도계 문자","INDIC"],
+  ["태국어","THAI"],
+  ["동남아 문자","SOUTHEAST_ASIA"],
+  ["조지아/아르메니아","CAUCASIAN"],
+  ["라틴 확장","LATIN_EXTENDED"],
+  ["기호","SYMBOL"],
+  ["수학","MATH"],
+  ["화살표","ARROW"],
+  ["통화","CURRENCY"],
+  ["문장부호","PUNCTUATION"],
+  ["괘선/박스","BOX"],
+  ["도형","SHAPE"],
+  ["음악","MUSIC"],
+  ["체스/카드/게임","GAME"],
+  ["이모지","EMOJI"],
+  ["아프리카 문자","AFRICAN"],
+  ["아메리카 원주민 문자","AMERICAS"],
+  ["동아시아 확장","EAST_ASIAN"],
+  ["고대 문자","ANCIENT"],
+  ["확장","EXTENDED"]
+];
+
+const groups=new Map();
+const charToY=new Map();
+const yToChar=new Map();
+
+GROUPS.forEach(([label,key],region)=>{
+  groups.set(key,{label,key,region,chars:[],set:new Set()});
+});
+
+function addChars(key,text){
+  const g=groups.get(key);
+  if(!g)return;
+  for(const ch of [...text]){
+    if(!g.set.has(ch)){
+      g.set.add(ch);
+      g.chars.push(ch);
+    }
+  }
+}
+function addRange(key,start,end){
+  const g=groups.get(key);
+  if(!g)return;
+  for(let cp=start;cp<=end;cp++){
+    if(cp>=0xD800&&cp<=0xDFFF)continue;
+    try{addChars(key,String.fromCodePoint(cp))}catch(_){}
+  }
+}
+
+/* ------------------------------------------------------------
+   미국 영어
+   ------------------------------------------------------------ */
+addChars("US_UPPER","ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+addChars("US_LOWER","abcdefghijklmnopqrstuvwxyz");
+
+/* 숫자 */
+addChars("DIGIT","0123456789");
+
+/* ------------------------------------------------------------
+   스페인어
+   ------------------------------------------------------------ */
+addChars("SPANISH",
+"ÁÉÍÓÚÜÑáéíóúüñ¿¡ÀÈÌÒÙàèìòù" +
+"ÂÊÎÔÛâêîôûÄËÏÖÜäëïöü" +
+"Çç" );
+
+/* ------------------------------------------------------------
+   공백/제어
+   ------------------------------------------------------------ */
+addChars("CONTROL","\u0000\u0009\u000A\u000B\u000C\u000D\u0020\u00A0");
+addChars("CONTROL","\u0008\u001B");
+
+/* ------------------------------------------------------------
+   한글 — 현대 한글 11,172자 + 자모 전부
+   ------------------------------------------------------------ */
+addRange("KOREAN",0xAC00,0xD7A3);
+addRange("KOREAN_JAMO",0x1100,0x11FF);
+addRange("KOREAN_JAMO",0x3130,0x318F);
+addRange("KOREAN_JAMO",0xA960,0xA97F);
+addRange("KOREAN_JAMO",0xD7B0,0xD7FF);
+
+/* ------------------------------------------------------------
+   일본어
+   ------------------------------------------------------------ */
+addRange("JAPANESE_HIRAGANA",0x3040,0x309F);
+addRange("JAPANESE_KATAKANA",0x30A0,0x30FF);
+addRange("JAPANESE_HALFWIDTH",0xFF66,0xFF9F);
+
+/* 일본어 표기에서 자주 쓰이는 CJK 한자 */
+addRange("CJK",0x3400,0x4DBF);
+addRange("CJK",0x4E00,0x9FFF);
+addRange("CJK",0xF900,0xFAFF);
+
+/* ------------------------------------------------------------
+   세계 문자
+   ------------------------------------------------------------ */
+addRange("GREEK",0x0370,0x03FF);
+addRange("GREEK",0x1F00,0x1FFF);
+
+addRange("CYRILLIC",0x0400,0x052F);
+addRange("CYRILLIC",0x2DE0,0x2DFF);
+addRange("CYRILLIC",0xA640,0xA69F);
+
+addRange("HEBREW",0x0590,0x05FF);
+
+addRange("ARABIC",0x0600,0x06FF);
+addRange("ARABIC",0x0750,0x077F);
+addRange("ARABIC",0x08A0,0x08FF);
+addRange("ARABIC",0xFB50,0xFDFF);
+addRange("ARABIC",0xFE70,0xFEFF);
+
+addRange("DEVANAGARI",0x0900,0x097F);
+addRange("BENGALI",0x0980,0x09FF);
+
+addRange("INDIC",0x0A00,0x0A7F);
+addRange("INDIC",0x0A80,0x0AFF);
+addRange("INDIC",0x0B00,0x0B7F);
+addRange("INDIC",0x0B80,0x0BFF);
+addRange("INDIC",0x0C00,0x0C7F);
+addRange("INDIC",0x0C80,0x0CFF);
+addRange("INDIC",0x0D00,0x0D7F);
+
+addRange("THAI",0x0E00,0x0E7F);
+addRange("SOUTHEAST_ASIA",0x0E80,0x0EFF);
+addRange("SOUTHEAST_ASIA",0x1000,0x109F);
+addRange("SOUTHEAST_ASIA",0x1780,0x17FF);
+
+addRange("CAUCASIAN",0x0530,0x058F);
+addRange("CAUCASIAN",0x10A0,0x10FF);
+addRange("CAUCASIAN",0x2D00,0x2D2F);
+
+/* ------------------------------------------------------------
+   라틴 확장
+   ------------------------------------------------------------ */
+addRange("LATIN_EXTENDED",0x00C0,0x024F);
+addRange("LATIN_EXTENDED",0x1E00,0x1EFF);
+addRange("LATIN_EXTENDED",0x2C60,0x2C7F);
+addRange("LATIN_EXTENDED",0xA720,0xA7FF);
+
+/* ------------------------------------------------------------
+   추가 세계 문자
+   ------------------------------------------------------------ */
+
+/* 시리아어 */
+addRange("EXTENDED",0x0700,0x074F);
+
+/* 시날라어 */
+addRange("EXTENDED",0x0D80,0x0DFF);
+
+/* 티베트어 */
+addRange("EXTENDED",0x0F00,0x0FFF);
+
+/* 에티오피아 */
+addRange("EXTENDED",0x1200,0x137F);
+
+/* 체로키 */
+addRange("EXTENDED",0x13A0,0x13FF);
+addRange("EXTENDED",0xAB70,0xABBF);
+
+/* 캐나다 원주민 음절문자 */
+addRange("EXTENDED",0x1400,0x167F);
+
+/* 오검 / 룬 */
+addRange("EXTENDED",0x1680,0x169F);
+addRange("EXTENDED",0x16A0,0x16FF);
+
+/* 타갈로그 / 부히드 / 타그반와 */
+addRange("EXTENDED",0x1700,0x177F);
+
+/* 리바이 / 림부 / 타이탐 */
+addRange("EXTENDED",0x1900,0x19FF);
+
+/* 미얀마 확장 */
+addRange("SOUTHEAST_ASIA",0xAA60,0xAA7F);
+addRange("SOUTHEAST_ASIA",0xA9E0,0xA9FF);
+
+/* 자바 / 발리 */
+addRange("EXTENDED",0xA980,0xA9DF);
+
+/* 오스마냐 / 쇼 / 올 치키 */
+addRange("EXTENDED",0x10480,0x104AF);
+addRange("EXTENDED",0x10450,0x1047F);
+addRange("EXTENDED",0x1E800,0x1E8DF);
+
+/* 고딕 / 고대 문자 일부 */
+addRange("EXTENDED",0x10330,0x1034F);
+addRange("EXTENDED",0x10300,0x1032F);
+
+/* 수학 알파벳 */
+addRange("MATH",0x1D400,0x1D7FF);
+
+/* 기호 문자 확장 */
+addRange("SHAPE",0x2B00,0x2BFF);
+addRange("SYMBOL",0x2300,0x23FF);
+addRange("SYMBOL",0x2400,0x243F);
+
+/* ------------------------------------------------------------
+   추가 세계 문자
+   ------------------------------------------------------------ */
+addRange("CJK",0x2E80,0x2EFF);
+addRange("CJK",0x3000,0x303F);
+addRange("CJK",0x31A0,0x31BF);
+addRange("CJK",0x31C0,0x31EF);
+addRange("CJK",0x2F00,0x2FDF);
+
+addRange("JAPANESE_HIRAGANA",0x1B000,0x1B0FF);
+addRange("JAPANESE_KATAKANA",0x31F0,0x31FF);
+
+addRange("EXTENDED",0x0700,0x074F);
+addRange("EXTENDED",0x0800,0x083F);
+addRange("EXTENDED",0x0F00,0x0FFF);
+addRange("EXTENDED",0x1800,0x18AF);
+addRange("EXTENDED",0x1200,0x137F);
+addRange("EXTENDED",0x1380,0x139F);
+addRange("EXTENDED",0x1700,0x177F);
+addRange("EXTENDED",0x16A0,0x16FF);
+addRange("EXTENDED",0x10300,0x1032F);
+addRange("EXTENDED",0x10330,0x1034F);
+addRange("EXTENDED",0x10400,0x1044F);
+addRange("EXTENDED",0x10450,0x1047F);
+addRange("EXTENDED",0x10480,0x104AF);
+
+addRange("INDIC",0x11000,0x1107F);
+addRange("INDIC",0x11100,0x1114F);
+addRange("INDIC",0x11200,0x1124F);
+addRange("INDIC",0x11300,0x1137F);
+addRange("INDIC",0x11400,0x1147F);
+addRange("INDIC",0x11580,0x115FF);
+addRange("INDIC",0x11600,0x1165F);
+
+addRange("SOUTHEAST_ASIA",0xAA00,0xAA5F);
+addRange("SOUTHEAST_ASIA",0xA980,0xA9DF);
+addRange("SOUTHEAST_ASIA",0xAA80,0xAADF);
+
+addRange("MATH",0x1D200,0x1D24F);
+addRange("MATH",0x1D300,0x1D35F);
+addRange("MATH",0x1D400,0x1D7FF);
+addRange("SYMBOL",0x2800,0x28FF);
+addRange("SYMBOL",0x2B00,0x2BFF);
+addRange("SYMBOL",0x1F100,0x1F1FF);
+
+/* ------------------------------------------------------------
+   추가 세계 문자
+   ------------------------------------------------------------ */
+addRange("EAST_ASIAN",0x2E80,0x2EFF);
+addRange("EAST_ASIAN",0x3000,0x303F);
+addRange("EAST_ASIAN",0x31A0,0x31BF);
+addRange("EAST_ASIAN",0x31C0,0x31EF);
+addRange("EAST_ASIAN",0x2F00,0x2FDF);
+addRange("EAST_ASIAN",0x2FF0,0x2FFF);
+
+addRange("JAPANESE_HIRAGANA",0x1B001,0x1B0FF);
+addRange("JAPANESE_KATAKANA",0x31F0,0x31FF);
+addRange("JAPANESE_KATAKANA",0x1B100,0x1B12F);
+addRange("JAPANESE_KATAKANA",0x1AFF0,0x1AFFF);
+
+addRange("EXTENDED",0x1800,0x18AF);
+addRange("EXTENDED",0x11660,0x1167F);
+addRange("EXTENDED",0x0F00,0x0FFF);
+addRange("EXTENDED",0x0700,0x074F);
+addRange("EXTENDED",0x0800,0x083F);
+
+addRange("AFRICAN",0x1200,0x137F);
+addRange("AFRICAN",0x1380,0x139F);
+addRange("AFRICAN",0x2D80,0x2DDF);
+addRange("AFRICAN",0x16A40,0x16A6F);
+addRange("AFRICAN",0x1E900,0x1E95F);
+addRange("AFRICAN",0x1E000,0x1E02F);
+
+addRange("AMERICAS",0x1400,0x167F);
+addRange("AMERICAS",0x13A0,0x13FF);
+addRange("AMERICAS",0xAB70,0xABBF);
+
+addRange("EXTENDED",0x1700,0x177F);
+
+addRange("INDIC",0x11000,0x1107F);
+addRange("INDIC",0x11100,0x1114F);
+addRange("INDIC",0x11200,0x1124F);
+addRange("INDIC",0x11300,0x1137F);
+addRange("INDIC",0x11400,0x1147F);
+addRange("INDIC",0x11580,0x115FF);
+addRange("INDIC",0x11600,0x1165F);
+addRange("INDIC",0xA800,0xA82F);
+addRange("INDIC",0xA840,0xA87F);
+addRange("INDIC",0xA880,0xA8DF);
+addRange("INDIC",0xA900,0xA92F);
+addRange("INDIC",0xA930,0xA95F);
+
+addRange("SOUTHEAST_ASIA",0xAA00,0xAA5F);
+addRange("SOUTHEAST_ASIA",0xA980,0xA9DF);
+addRange("SOUTHEAST_ASIA",0xAA80,0xAADF);
+
+addRange("ANCIENT",0x16A0,0x16FF);
+addRange("ANCIENT",0x10300,0x1032F);
+addRange("ANCIENT",0x10330,0x1034F);
+addRange("ANCIENT",0x10380,0x1039F);
+addRange("ANCIENT",0x10400,0x1044F);
+addRange("ANCIENT",0x10450,0x1047F);
+addRange("ANCIENT",0x10480,0x104AF);
+addRange("ANCIENT",0x10500,0x1052F);
+
+addRange("MATH",0x1D200,0x1D24F);
+addRange("MATH",0x1D300,0x1D35F);
+addRange("MATH",0x1D400,0x1D7FF);
+addRange("SYMBOL",0x2800,0x28FF);
+addRange("SYMBOL",0x2300,0x23FF);
+addRange("SYMBOL",0x2400,0x243F);
+addRange("SHAPE",0x2B00,0x2BFF);
+
+/* ------------------------------------------------------------
+   기호/수학/문장부호
+   ------------------------------------------------------------ */
+addRange("PUNCTUATION",0x2000,0x206F);
+addRange("PUNCTUATION",0x2E00,0x2E7F);
+addRange("CURRENCY",0x20A0,0x20CF);
+addRange("MATH",0x2100,0x214F);
+addRange("MATH",0x2200,0x22FF);
+addRange("MATH",0x27C0,0x27EF);
+addRange("MATH",0x2980,0x29FF);
+addRange("MATH",0x2A00,0x2AFF);
+addRange("ARROW",0x2190,0x21FF);
+addRange("ARROW",0x27F0,0x27FF);
+addRange("ARROW",0x2900,0x297F);
+addRange("BOX",0x2500,0x257F);
+addRange("SHAPE",0x25A0,0x25FF);
+addRange("SHAPE",0x2600,0x26FF);
+addRange("SHAPE",0x2700,0x27BF);
+addRange("MUSIC",0x1D100,0x1D1FF);
+
+/* 게임/카드 */
+addRange("GAME",0x1F000,0x1F02F);
+addRange("GAME",0x1F0A0,0x1F0FF);
+
+/* 이모지/기호 추가 영역 */
+addRange("EMOJI",0x1F100,0x1F1FF);
+addRange("EMOJI",0x1F200,0x1F2FF);
+addRange("EMOJI",0x1F7E0,0x1F7FF);
+addRange("EMOJI",0x1F800,0x1F8FF);
+addRange("EMOJI",0x1FA70,0x1FAFF);
+
+/* 이모지 주요 영역 */
+addRange("EMOJI",0x1F300,0x1F5FF);
+addRange("EMOJI",0x1F600,0x1F64F);
+addRange("EMOJI",0x1F680,0x1F6FF);
+addRange("EMOJI",0x1F900,0x1F9FF);
+addRange("EMOJI",0x1FA00,0x1FAFF);
+
+/* 자주 쓰는 기호 */
+addChars("SYMBOL",
+"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~" +
+"§¶©®™°·•※✓✔✕✖★☆○●◎◇◆□■△▲▽▼" +
+"†‡‰′″℃℉№℗℠");
+
+addChars("MATH",
+"∞±×÷√∑∏∫∂∆∇≈≠≤≥∈∉⊂⊃⊆⊇∪∩∧∨¬∀∃∅∴∵∝∼≡≅⌈⌉⌊⌋");
+
+addChars("ARROW",
+"←↑→↓↔↕↖↗↘↙⇐⇑⇒⇓⇔⇕⇖⇗⇘⇙➜➝➞➟➠➡➢➤");
+
+addChars("CURRENCY","$€£¥₩₹₽₺₴₦₫₱₡₲₵₭₮₰₿");
+
+/* ------------------------------------------------------------
+   Yunocode ID 테이블 생성
+   ------------------------------------------------------------ */
+for(const [,g] of groups){
+  g.chars.forEach((ch,i)=>{
+    const id=makeYunocode(g.region,i);
+    charToY.set(ch,id);
+    yToChar.set(id,ch);
+  });
+}
+
+/* 등록되지 않은 문자도 EXTENDED 영역에 자동 등록.
+   따라서 "작동 안 하는 문자"를 JTXT가 unknown으로 버리지 않는다. */
+function ensureYunocode(ch){
+  const old=charToY.get(ch);
+  if(old)return old;
+  const g=groups.get("EXTENDED");
+  const id=makeYunocode(g.region,g.chars.length);
+  g.chars.push(ch);
+  g.set.add(ch);
+  charToY.set(ch,id);
+  yToChar.set(id,ch);
+  return id;
+}
+
+/* ------------------------------------------------------------
+   UI
+   ------------------------------------------------------------ */
+const editor=document.getElementById("editor");
+const glyph=document.getElementById("glyph");
+const yuno=document.getElementById("yunocode");
+const category=document.getElementById("category");
+const stats=document.getElementById("stats");
+const status=document.getElementById("status");
+const palette=document.getElementById("palette");
+const paletteInfo=document.getElementById("paletteInfo");
+const groupSelect=document.getElementById("group");
+const search=document.getElementById("search");
+const fileInput=document.getElementById("fileInput");
+
+for(const [label,key] of GROUPS){
+  const option=document.createElement("option");
+  option.value=key;
+  option.textContent=label;
+  groupSelect.appendChild(option);
+}
+
+function findGroup(ch){
+  for(const [,g] of groups){
+    if(g.set.has(ch))return g;
+  }
+  return null;
+}
+
+function selectedChar(){
+  const pos=editor.selectionStart;
+  if(pos<=0)return "";
+  const arr=[...editor.value.slice(0,pos)];
+  return arr[arr.length-1]||"";
+}
+
+function updateSelection(){
+  const ch=selectedChar();
+  if(!ch){
+    glyph.textContent="—";
+    yuno.textContent="J-????????";
+    category.textContent="문자 없음";
+  }else{
+    glyph.textContent=ch==="\n"?"↵":ch==="\t"?"⇥":ch;
+    yuno.textContent=ensureYunocode(ch);
+    const g=findGroup(ch);
+    category.textContent=g?g.label:"확장";
+  }
+  updateStats();
+}
+
+function updateStats(){
+  const chars=[...editor.value];
+  for(const ch of chars)ensureYunocode(ch);
+  const known=chars.filter(ch=>charToY.has(ch)).length;
+  const lines=editor.value.length?editor.value.split("\n").length:1;
+  stats.textContent=
+    "문자: "+chars.length.toLocaleString()+"\\n"+
+    "UTF-16 단위: "+editor.value.length.toLocaleString()+"\\n"+
+    "줄: "+lines.toLocaleString()+"\\n"+
+    "Yunocode 등록: "+known.toLocaleString()+"\\n"+
+    "영역: "+groups.size+"개\\n"+
+    "한글 완성형: "+groups.get("KOREAN").chars.length.toLocaleString()+"자\\n"+
+    "CJK: "+groups.get("CJK").chars.length.toLocaleString()+"자\\n"+
+    "이모지 영역: "+groups.get("EMOJI").chars.length.toLocaleString()+"자\n"+"전체 등록 문자: "+[...groups.values()].reduce((n,g)=>n+g.chars.length,0).toLocaleString()+"자\\n"+"저장: Yunocode 번호 → 38-bit binary";
+}
+
+function renderPalette(){
+  palette.innerHTML="";
+  const g=groups.get(groupSelect.value);
+  if(!g)return;
+  const q=search.value.trim();
+  let list;
+  if(q){
+    list=g.chars.filter(ch=>ch.includes(q));
+  }else{
+    list=g.chars.slice(0,1200);
+  }
+  for(const ch of list){
+    const b=document.createElement("button");
+    b.textContent=ch==="\n"?"↵":ch==="\t"?"⇥":ch===" "?"␠":ch;
+    b.title=ensureYunocode(ch);
+    b.onclick=()=>{
+      const a=editor.selectionStart;
+      const z=editor.selectionEnd;
+      editor.setRangeText(ch,a,z,"end");
+      editor.focus();
+      updateSelection();
+    };
+    palette.appendChild(b);
+  }
+  paletteInfo.textContent=
+    g.label+" · 전체 "+g.chars.length.toLocaleString()+"자 · 현재 표시 "+list.length.toLocaleString()+"자"+
+    (q?" · 검색 결과":" · 처음 1,200자 표시");
+}
+
+groupSelect.onchange=renderPalette;
+search.oninput=renderPalette;
+
+editor.addEventListener("input",updateSelection);
+editor.addEventListener("click",updateSelection);
+editor.addEventListener("keyup",updateSelection);
+editor.addEventListener("select",updateSelection);
+
+editor.addEventListener("keydown",e=>{
+  if(e.key==="Tab"){
+    e.preventDefault();
+    const a=editor.selectionStart,z=editor.selectionEnd;
+    editor.setRangeText("\t",a,z,"end");
+    updateSelection();
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){
+    e.preventDefault();
+    saveJTXT();
+  }
+});
+
+document.getElementById("newBtn").onclick=()=>{
+  if(editor.value&&!confirm("현재 문서를 지울까요?"))return;
+  editor.value="";
+  updateSelection();
+  status.textContent="새 문서";
+};
+
+document.getElementById("openBtn").onclick=()=>fileInput.click();
+
+fileInput.onchange=async()=>{
+  const file=fileInput.files[0];
+  if(!file)return;
+  try{
+    if(file.name.toLowerCase().endsWith(".jtxt")){
+      editor.value=readJTXBBinary(await file.arrayBuffer());
+      status.textContent="JTXT 바이너리 열기 완료";
+    }else{
+      editor.value=await file.text();
+      status.textContent="TXT 열기 완료";
+    }
+  }catch(err){
+    alert("파일을 읽지 못했습니다.\\n"+err.message);
+  }
+  fileInput.value="";
+  updateSelection();
+};
+
+function yunocodeNumber(id){
+  let n=0n;
+  for(let i=2;i<id.length;i++){
+    n=n*26n+BigInt(id.charCodeAt(i)-65);
+  }
+  return n;
+}
+
+function writeU64(view,offset,value){
+  view.setBigUint64(offset,value,true);
+}
+
+/* Yunocode 번호는 26진수이고, 번호 자체를 38비트 이진수로 변환한다.
+   26^8 < 2^38 이므로 모든 J-XXXXXXXX를 38비트로 표현 가능. */
+const YUNOCODE_BITS=38n;
+const YUNOCODE_MAX=(1n<<YUNOCODE_BITS)-1n;
+
+function buildJTXBBinary(){
+  const chars=[...editor.value];
+  const bitCount=BigInt(chars.length)*YUNOCODE_BITS;
+  const payloadSize=Math.ceil(Number(bitCount)/8);
+  const payload=new Uint8Array(payloadSize);
+
+  let bitPos=0;
+  for(const ch of chars){
+    const number=yunocodeNumber(ensureYunocode(ch));
+
+    /* 번호 -> 38자리 이진수 -> 비트 패킹 */
+    for(let b=37;b>=0;b--){
+      const bit=(number>>BigInt(b))&1n;
+      if(bit){
+        const byteIndex=Math.floor(bitPos/8);
+        const bitIndex=7-(bitPos%8);
+        payload[byteIndex]|=(1<<bitIndex);
+      }
+      bitPos++;
+    }
+  }
+
+  const header=new ArrayBuffer(32);
+  const hv=new DataView(header);
+  const hb=new Uint8Array(header);
+
+  hb[0]=0x4A; hb[1]=0x54; hb[2]=0x58; hb[3]=0x42;
+  hb[4]=2; hb[5]=0;
+  hv.setUint16(6,0x0002,true); // 38-bit packed Yunocode
+  hv.setBigUint64(8,BigInt(chars.length),true);
+  hv.setBigUint64(16,bitCount,true);
+  hv.setBigUint64(24,0n,true);
+
+  const output=new Uint8Array(32+payload.length);
+  output.set(hb,0);
+  output.set(payload,32);
+  return output;
+}
+
+function readJTXBBinary(buffer){
+  const bytes=new Uint8Array(buffer);
+  if(bytes.length<32)throw new Error("JTXT 파일이 너무 작습니다.");
+  if(bytes[0]!==0x4A||bytes[1]!==0x54||bytes[2]!==0x58||bytes[3]!==0x42)
+    throw new Error("JTXB 바이너리 파일이 아닙니다.");
+
+  const view=new DataView(buffer);
+  if(view.getUint8(4)!==2)throw new Error("지원하지 않는 JTXT Binary 버전입니다.");
+
+  const count=view.getBigUint64(8,true);
+  const bitCount=view.getBigUint64(16,true);
+  const expectedBits=count*YUNOCODE_BITS;
+  if(bitCount!==expectedBits)throw new Error("Yunocode 비트 수가 올바르지 않습니다.");
+
+  const expectedBytes=(Number(bitCount)+7)>>3;
+  if(bytes.length-32!==expectedBytes)
+    throw new Error("JTXT payload 크기가 올바르지 않습니다.");
+
+  if(count>BigInt(Number.MAX_SAFE_INTEGER))
+    throw new Error("문서가 너무 큽니다.");
+
+  const out=[];
+  let bitPos=0;
+
+  for(let i=0;i<Number(count);i++){
+    let number=0n;
+    for(let b=0;b<38;b++){
+      const byteIndex=Math.floor(bitPos/8);
+      const bitIndex=7-(bitPos%8);
+      const bit=(bytes[32+byteIndex]>>bitIndex)&1;
+      number=(number<<1n)|BigInt(bit);
+      bitPos++;
+    }
+
+    if(number>YUNOCODE_MAX)throw new Error("잘못된 Yunocode 번호입니다.");
+
+    let n=number;
+    const letters=new Array(8);
+    for(let k=7;k>=0;k--){
+      letters[k]=String.fromCharCode(65+Number(n%26n));
+      n/=26n;
+    }
+    const id="J-"+letters.join("");
+    out.push(yToChar.get(id)||" ");
+  }
+  return out.join("");
+}
+
+function downloadBinary(name,data){
+  const blob=new Blob([data],{type:"application/octet-stream"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+function downloadFile(name,data,mime="text/plain;charset=utf-8"){
+  const blob=new Blob([data],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+function saveJTXT(){
+  downloadBinary("document.jtxt",buildJTXBBinary());
+  status.textContent="JTXT 바이너리 저장 완료";
+}
+
+document.getElementById("saveBtn").onclick=saveJTXT;
+document.getElementById("downloadBtn").onclick=saveJTXT;
+
+document.getElementById("downloadMapBtn").onclick=()=>{
+  const lines=["YUNOCODE CHARACTER MAP","format=J-XXXXXXXX","version=1",""];
+  for(const [label,key] of GROUPS){
+    const g=groups.get(key);
+    lines.push("["+label+"]");
+    for(let i=0;i<g.chars.length;i++){
+      const ch=g.chars[i];
+      const shown=ch==="\n"?"\\n":ch==="\t"?"\\t":ch===" "?"<SPACE>":ch;
+      lines.push(makeYunocode(g.region,i)+" = "+shown);
+    }
+    lines.push("");
+  }
+  downloadFile("yunocode-map.txt",lines.join("\n"));
+  status.textContent="Yunocode 목록 다운로드 완료";
+};
+
+document.getElementById("txtBtn").onclick=()=>{
+  downloadFile("document.txt",editor.value);
+  status.textContent="TXT 다운로드 완료";
+};
+
+document.getElementById("font").onchange=e=>{
+  if(e.target.value==="mono")
+    editor.style.fontFamily='"Cascadia Mono","Consolas","Noto Sans",monospace';
+  else if(e.target.value==="serif")
+    editor.style.fontFamily='Georgia,"Noto Serif",serif';
+  else
+    editor.style.fontFamily='system-ui,"Malgun Gothic","Noto Sans",sans-serif';
+};
+
+/* 기본 화면 */
+groupSelect.value="KOREAN";
+renderPalette();
+updateSelection();
+status.textContent="Yunocode 준비 완료 · JTXT Binary 2.0 · 38-bit";
+</script>
+</body>
+</html>
