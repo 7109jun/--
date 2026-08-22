@@ -1,5 +1,8 @@
 # clce
 <img width="534" height="393" alt="pixil-frame-0" src="https://github.com/user-attachments/assets/09809064-0af6-4f18-86ee-d350bcb92b0b" />
+
+
+# clce는 그냥 코드 뭐시기하는데입니다.
 ```cpp
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
