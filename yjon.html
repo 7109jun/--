@@ -1,0 +1,2884 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Yjon GitHub Actions Compiler</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+.main {
+    width: 100%;
+    max-width: 1450px;
+    margin: auto;
+}
+
+h1 {
+    margin: 0;
+    color: #38bdf8;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+p {
+    color: #94a3b8;
+}
+
+.panel {
+    margin-top: 15px;
+    padding: 15px;
+
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(220px, 1fr));
+
+    gap: 12px;
+}
+
+.editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 900px) {
+    .editor-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.col {
+    flex: 1;
+    min-width: 220px;
+}
+
+label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #cbd5e1;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+
+    padding: 10px;
+
+    background: #0f172a;
+    color: #f8fafc;
+
+    border: 1px solid #475569;
+    border-radius: 7px;
+
+    font-size: 14px;
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #38bdf8;
+}
+
+textarea {
+    min-height: 430px;
+
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+
+    resize: vertical;
+}
+
+pre {
+    margin: 0;
+    min-height: 430px;
+
+    padding: 15px;
+
+    background: #020617;
+
+    border: 1px solid #334155;
+    border-radius: 8px;
+
+    overflow: auto;
+    white-space: pre-wrap;
+
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+
+    color: #e2e8f0;
+}
+
+button {
+    padding: 10px 15px;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: #0284c7;
+    color: white;
+
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0369a1;
+}
+
+button.secondary {
+    background: #475569;
+}
+
+button.secondary:hover {
+    background: #334155;
+}
+
+button.green {
+    background: #15803d;
+}
+
+button.green:hover {
+    background: #166534;
+}
+
+button.danger {
+    background: #e11d48;
+}
+
+button.danger:hover {
+    background: #be123c;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    margin-top: 12px;
+}
+
+.info {
+    padding: 12px;
+
+    background: #082f49;
+
+    border: 1px solid #0369a1;
+    border-radius: 8px;
+
+    color: #bae6fd;
+
+    line-height: 1.7;
+}
+
+.path-box {
+    padding: 12px;
+
+    background: #020617;
+
+    border: 1px solid #334155;
+    border-radius: 8px;
+
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+
+    line-height: 1.9;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.small {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.package-list {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.install-preview {
+    margin-top: 12px;
+
+    padding: 12px;
+
+    background: #020617;
+
+    border: 1px solid #334155;
+    border-radius: 8px;
+
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+
+    white-space: pre-wrap;
+}
+
+.badge {
+    display: inline-block;
+
+    padding: 4px 8px;
+
+    margin-right: 5px;
+
+    border-radius: 999px;
+
+    background: #075985;
+    color: #bae6fd;
+
+    font-size: 12px;
+}
+
+.warning {
+    color: #fde68a;
+}
+</style>
+</head>
+
+<body>
+
+<div class="main">
+
+    <h1>🚀 Yjon GitHub Actions Compiler</h1>
+
+    <p>
+        GitHub Actions Workflow를 작성하고
+        설치 패키지, 브랜치, 경로, CMake까지 자동 구성
+    </p>
+
+
+    <!-- =====================================================
+         PROJECT SETTINGS
+    ====================================================== -->
+
+    <div class="panel">
+
+        <h2>1. GitHub 프로젝트 설정</h2>
+
+        <div class="grid">
+
+            <div>
+
+                <label for="templateSelect">
+                    프로젝트 / 언어
+                </label>
+
+                <select
+                    id="templateSelect"
+                    onchange="loadTemplate()"
+                >
+
+                    <option value="node">
+                        Node.js
+                    </option>
+
+                    <option value="python">
+                        Python
+                    </option>
+
+                    <option value="java">
+                        Java
+                    </option>
+
+                    <option value="cpp">
+                        C++
+                    </option>
+
+                    <option value="c">
+                        C
+                    </option>
+
+                    <option value="csharp">
+                        C#
+                    </option>
+
+                    <option value="rust">
+                        Rust
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="branchInput">
+                    GitHub 브랜치
+                </label>
+
+                <input
+                    id="branchInput"
+                    value="main"
+                    oninput="applyBranch()"
+                    placeholder="main"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="workflowName">
+                    Workflow 파일명
+                </label>
+
+                <input
+                    id="workflowName"
+                    value="ci.yml"
+                    oninput="updatePathInfo()"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="workflowDir">
+                    Workflow 디렉터리
+                </label>
+
+                <input
+                    id="workflowDir"
+                    value=".github/workflows"
+                    oninput="updatePathInfo()"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="actions">
+
+            <button onclick="loadTemplate()">
+                템플릿 불러오기
+            </button>
+
+            <button
+                class="secondary"
+                onclick="applyBranch()"
+            >
+                브랜치 적용
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         PACKAGE INSTALLER
+    ====================================================== -->
+
+    <div class="panel">
+
+        <h2>2. GitHub Actions 설치 패키지</h2>
+
+        <div class="info">
+
+            GitHub Actions 실행 전에 필요한 패키지를
+            자동으로 설치할 수 있습니다.
+
+            <br><br>
+
+            <span class="badge">apt</span>
+            Linux 시스템 패키지
+
+            <span class="badge">pip</span>
+            Python 패키지
+
+            <span class="badge">npm</span>
+            Node.js 패키지
+
+            <span class="badge">cargo</span>
+            Rust 패키지
+
+        </div>
+
+        <br>
+
+
+        <div class="grid">
+
+            <div>
+
+                <label for="packageManager">
+                    패키지 관리자
+                </label>
+
+                <select
+                    id="packageManager"
+                    onchange="updatePackagePreview()"
+                >
+
+                    <option value="none">
+                        설치 안 함
+                    </option>
+
+                    <option value="apt">
+                        apt
+                    </option>
+
+                    <option value="pip">
+                        pip
+                    </option>
+
+                    <option value="npm">
+                        npm
+                    </option>
+
+                    <option value="cargo">
+                        cargo
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="packageInstallMode">
+                    설치 방식
+                </label>
+
+                <select
+                    id="packageInstallMode"
+                    onchange="updatePackagePreview()"
+                >
+
+                    <option value="normal">
+                        일반 설치
+                    </option>
+
+                    <option value="upgrade">
+                        업그레이드 후 설치
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    예시
+                </label>
+
+                <div class="path-box">
+
+                    apt:
+                    gcc cmake make
+
+                    <br>
+
+                    pip:
+                    pytest requests
+
+                    <br>
+
+                    npm:
+                    typescript eslint
+
+                    <br>
+
+                    cargo:
+                    cargo-edit
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <br>
+
+
+        <label for="packageInput">
+            패키지 목록
+        </label>
+
+        <textarea
+            id="packageInput"
+            class="package-list"
+            placeholder="패키지를 한 줄에 하나씩 입력&#10;&#10;예:&#10;gcc&#10;g++&#10;cmake&#10;make"
+            oninput="updatePackagePreview()"
+        ></textarea>
+
+
+        <div class="install-preview">
+
+            <b>생성될 설치 명령:</b>
+
+            <br><br>
+
+            <span id="packagePreview">
+                설치 안 함
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         PATH
+    ====================================================== -->
+
+    <div class="panel">
+
+        <h2>3. GitHub 경로 도우미</h2>
+
+        <div class="info">
+
+            GitHub Workflow 경로는 <b>/</b>를 사용합니다.
+
+            <br>
+
+            Windows에서
+            <b>src\main.cpp</b>를 입력해도
+            <b>src/main.cpp</b>로 자동 변환됩니다.
+
+        </div>
+
+        <br>
+
+
+        <div class="grid">
+
+            <div>
+
+                <label for="sourcePath">
+                    소스 경로
+                </label>
+
+                <input
+                    id="sourcePath"
+                    value="src/main.cpp"
+                    oninput="updatePathInfo()"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="cmakePath">
+                    CMakeLists.txt 경로
+                </label>
+
+                <input
+                    id="cmakePath"
+                    value="CMakeLists.txt"
+                    oninput="updatePathInfo()"
+                >
+
+            </div>
+
+        </div>
+
+        <br>
+
+
+        <div class="path-box">
+
+            <div>
+
+                <b>Workflow:</b>
+
+                <span id="workflowPathView"></span>
+
+            </div>
+
+
+            <div>
+
+                <b>Source:</b>
+
+                <span id="sourcePathView"></span>
+
+            </div>
+
+
+            <div id="cmakePathRow">
+
+                <b>CMake:</b>
+
+                <span id="cmakePathView"></span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         YJON
+    ====================================================== -->
+
+    <div class="panel">
+
+        <h2>4. Yjon → GitHub Actions YAML</h2>
+
+        <div class="editor-grid">
+
+            <div>
+
+                <label>
+                    Yjon 입력
+                </label>
+
+                <textarea
+                    id="yjonInput"
+                    oninput="compileYjon()"
+                ></textarea>
+
+
+                <div class="actions">
+
+                    <button onclick="compileYjon()">
+                        컴파일 ⚙️
+                    </button>
+
+                    <button
+                        class="green"
+                        onclick="copyYAML()"
+                    >
+                        YAML 복사
+                    </button>
+
+                    <button
+                        class="secondary"
+                        onclick="downloadWorkflow()"
+                    >
+                        Workflow 다운로드
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    컴파일 결과
+                </label>
+
+                <pre id="yamlOutput"></pre>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CMAKE
+    ====================================================== -->
+
+    <div
+        class="panel hidden"
+        id="cmakePanel"
+    >
+
+        <h2>5. CMakeLists.txt 생성기</h2>
+
+        <div class="small">
+            C / C++ 프로젝트에서만 사용할 수 있습니다.
+        </div>
+
+        <br>
+
+
+        <div class="grid">
+
+            <div>
+
+                <label for="cmakeProject">
+                    프로젝트 이름
+                </label>
+
+                <input
+                    id="cmakeProject"
+                    value="MyProject"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="cmakeVersion">
+                    CMake 최소 버전
+                </label>
+
+                <select id="cmakeVersion">
+
+                    <option value="3.20">
+                        3.20
+                    </option>
+
+                    <option value="3.21">
+                        3.21
+                    </option>
+
+                    <option value="3.25">
+                        3.25
+                    </option>
+
+                    <option value="3.28">
+                        3.28
+                    </option>
+
+                    <option value="3.30">
+                        3.30
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="cmakeSource">
+                    소스 파일
+                </label>
+
+                <input
+                    id="cmakeSource"
+                    value="src/main.cpp"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="cmakeLanguage">
+                    언어
+                </label>
+
+                <select id="cmakeLanguage">
+
+                    <option value="cpp">
+                        C++
+                    </option>
+
+                    <option value="c">
+                        C
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="actions">
+
+            <button onclick="generateCMake()">
+                CMakeLists.txt 생성
+            </button>
+
+            <button
+                class="green"
+                onclick="copyCMake()"
+            >
+                CMake 복사
+            </button>
+
+            <button
+                class="secondary"
+                onclick="downloadCMake()"
+            >
+                CMakeLists.txt 다운로드
+            </button>
+
+        </div>
+
+
+        <br>
+
+        <pre id="cmakeOutput"></pre>
+
+    </div>
+
+
+    <!-- =====================================================
+         LIBRARY
+    ====================================================== -->
+
+    <div class="panel">
+
+        <h2>6. Yjon 라이브러리</h2>
+
+        <div class="row">
+
+            <div class="col">
+
+                <label>
+                    저장된 설정
+                </label>
+
+                <select
+                    id="librarySelect"
+                    onchange="loadFromLibrary()"
+                >
+
+                    <option value="">
+                        -- 선택 --
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="col">
+
+                <label>
+                    라이브러리 이름
+                </label>
+
+                <input
+                    id="libNameInput"
+                    placeholder="예: C++ Ubuntu CI"
+                >
+
+            </div>
+
+
+            <div
+                style="
+                    display:flex;
+                    align-items:end;
+                    gap:8px;
+                "
+            >
+
+                <button onclick="saveToLibrary()">
+                    저장
+                </button>
+
+                <button
+                    class="danger"
+                    onclick="deleteFromLibrary()"
+                >
+                    삭제
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+
+
+<script>
+
+/* =========================================================
+   Templates
+========================================================= */
+
+const templates = {
+
+    node: {
+
+        name: "Node.js CI",
+
+        on: [
+            "push",
+            "pull_request"
+        ],
+
+        jobs: {
+
+            build: {
+
+                "runs-on":
+                    "ubuntu-latest",
+
+                steps: [
+
+                    {
+                        uses:
+                            "actions/checkout@v4"
+                    },
+
+                    {
+                        name:
+                            "Setup Node.js",
+
+                        uses:
+                            "actions/setup-node@v4",
+
+                        with: {
+
+                            "node-version":
+                                "20"
+
+                        }
+
+                    },
+
+                    {
+                        name:
+                            "Install",
+
+                        run:
+                            "npm ci"
+                    },
+
+                    {
+                        name:
+                            "Test",
+
+                        run:
+                            "npm test"
+                    }
+
+                ]
+
+            }
+
+        }
+
+    },
+
+
+    python: {
+
+        name: "Python CI",
+
+        on: [
+            "push",
+            "pull_request"
+        ],
+
+        jobs: {
+
+            build: {
+
+                "runs-on":
+                    "ubuntu-latest",
+
+                steps: [
+
+                    {
+                        uses:
+                            "actions/checkout@v4"
+                    },
+
+                    {
+                        name:
+                            "Setup Python",
+
+                        uses:
+                            "actions/setup-python@v5",
+
+                        with: {
+
+                            "python-version":
+                                "3.12"
+
+                        }
+
+                    },
+
+                    {
+                        name:
+                            "Install",
+
+                        run:
+                            "python -m pip install --upgrade pip"
+                    },
+
+                    {
+                        name:
+                            "Test",
+
+                        run:
+                            "python -m pytest"
+                    }
+
+                ]
+
+            }
+
+        }
+
+    },
+
+
+    java: {
+
+        name:
+            "Java CI",
+
+        on: [
+            "push",
+            "pull_request"
+        ],
+
+        jobs: {
+
+            build: {
+
+                "runs-on":
+                    "ubuntu-latest",
+
+                steps: [
+
+                    {
+                        uses:
+                            "actions/checkout@v4"
+                    },
+
+                    {
+                        name:
+                            "Setup Java",
+
+                        uses:
+                            "actions/setup-java@v4",
+
+                        with: {
+
+                            "java-version":
+                                "21",
+
+                            distribution:
+                                "temurin"
+
+                        }
+
+                    },
+
+                    {
+                        name:
+                            "Build",
+
+                        run:
+                            "./gradlew build"
+                    }
+
+                ]
+
+            }
+
+        }
+
+    },
+
+
+    cpp: {
+
+        name:
+            "C++ CI",
+
+        on: [
+            "push",
+            "pull_request"
+        ],
+
+        jobs: {
+
+            build: {
+
+                "runs-on":
+                    "ubuntu-latest",
+
+                steps: [
+
+                    {
+                        uses:
+                            "actions/checkout@v4"
+                    },
+
+                    {
+                        name:
+                            "Configure",
+
+                        run:
+                            "cmake -S . -B build"
+                    },
+
+                    {
+                        name:
+                            "Build",
+
+                        run:
+                            "cmake --build build --config Release"
+                    },
+
+                    {
+                        name:
+                            "Test",
+
+                        run:
+                            "ctest --test-dir build --output-on-failure"
+                    }
+
+                ]
+
+            }
+
+        }
+
+    },
+
+
+    c: {
+
+        name:
+            "C CI",
+
+        on: [
+            "push",
+            "pull_request"
+        ],
+
+        jobs: {
+
+            build: {
+
+                "runs-on":
+                    "ubuntu-latest",
+
+                steps: [
+
+                    {
+                        uses:
+                            "actions/checkout@v4"
+                    },
+
+                    {
+                        name:
+                            "Configure",
+
+                        run:
+                            "cmake -S . -B build"
+                    },
+
+                    {
+                        name:
+                            "Build",
+
+                        run:
+                            "cmake --build build --config Release"
+                    },
+
+                    {
+                        name:
+                            "Test",
+
+                        run:
+                            "ctest --test-dir build --output-on-failure"
+                    }
+
+                ]
+
+            }
+
+        }
+
+    },
+
+
+    csharp: {
+
+        name:
+            "C# CI",
+
+        on: [
+            "push",
+            "pull_request"
+        ],
+
+        jobs: {
+
+            build: {
+
+                "runs-on":
+                    "ubuntu-latest",
+
+                steps: [
+
+                    {
+                        uses:
+                            "actions/checkout@v4"
+                    },
+
+                    {
+                        name:
+                            "Setup .NET",
+
+                        uses:
+                            "actions/setup-dotnet@v4",
+
+                        with: {
+
+                            "dotnet-version":
+                                "8.0.x"
+
+                        }
+
+                    },
+
+                    {
+                        name:
+                            "Restore",
+
+                        run:
+                            "dotnet restore"
+                    },
+
+                    {
+                        name:
+                            "Build",
+
+                        run:
+                            "dotnet build --configuration Release --no-restore"
+                    },
+
+                    {
+                        name:
+                            "Test",
+
+                        run:
+                            "dotnet test --configuration Release --no-build"
+                    }
+
+                ]
+
+            }
+
+        }
+
+    },
+
+
+    rust: {
+
+        name:
+            "Rust CI",
+
+        on: [
+            "push",
+            "pull_request"
+        ],
+
+        jobs: {
+
+            build: {
+
+                "runs-on":
+                    "ubuntu-latest",
+
+                steps: [
+
+                    {
+                        uses:
+                            "actions/checkout@v4"
+                    },
+
+                    {
+                        name:
+                            "Setup Rust",
+
+                        uses:
+                            "dtolnay/rust-toolchain@stable"
+                    },
+
+                    {
+                        name:
+                            "Check",
+
+                        run:
+                            "cargo check"
+                    },
+
+                    {
+                        name:
+                            "Test",
+
+                        run:
+                            "cargo test"
+                    },
+
+                    {
+
+                        name:
+                            "Build",
+
+                        run:
+                            "cargo build --release"
+
+                    }
+
+                ]
+
+            }
+
+        }
+
+    }
+
+};
+
+
+/* =========================================================
+   Utilities
+========================================================= */
+
+function normalizePath(path) {
+
+    return String(path || "")
+        .trim()
+        .replace(/\\/g, "/")
+        .replace(/\/+/g, "/")
+        .replace(/^\/+/, "");
+
+}
+
+
+function getPackageList() {
+
+    return document
+        .getElementById("packageInput")
+        .value
+        .split(/\r?\n/)
+        .map(x => x.trim())
+        .filter(Boolean);
+
+}
+
+
+/* =========================================================
+   Package Installation
+========================================================= */
+
+function getInstallCommand() {
+
+    const manager =
+        document.getElementById(
+            "packageManager"
+        ).value;
+
+    const mode =
+        document.getElementById(
+            "packageInstallMode"
+        ).value;
+
+    const packages =
+        getPackageList();
+
+
+    if (
+        manager === "none" ||
+        packages.length === 0
+    ) {
+
+        return "";
+
+    }
+
+
+    if (manager === "apt") {
+
+        const packageString =
+            packages.join(" ");
+
+        return (
+            "sudo apt-get update\n" +
+            "sudo apt-get install -y " +
+            packageString
+        );
+
+    }
+
+
+    if (manager === "pip") {
+
+        const prefix =
+            mode === "upgrade"
+                ? "python -m pip install --upgrade "
+                : "python -m pip install ";
+
+        return (
+            prefix +
+            packages.join(" ")
+        );
+
+    }
+
+
+    if (manager === "npm") {
+
+        const prefix =
+            mode === "upgrade"
+                ? "npm install -g "
+                : "npm install ";
+
+        return (
+            prefix +
+            packages.join(" ")
+        );
+
+    }
+
+
+    if (manager === "cargo") {
+
+        return (
+            "cargo install " +
+            packages.join(" ")
+        );
+
+    }
+
+
+    return "";
+
+}
+
+
+function updatePackagePreview() {
+
+    const manager =
+        document.getElementById(
+            "packageManager"
+        ).value;
+
+    const packages =
+        getPackageList();
+
+    const preview =
+        document.getElementById(
+            "packagePreview"
+        );
+
+
+    if (
+        manager === "none" ||
+        packages.length === 0
+    ) {
+
+        preview.textContent =
+            "설치 안 함";
+
+        return;
+
+    }
+
+
+    preview.textContent =
+        getInstallCommand();
+
+}
+
+
+function createPackageStep() {
+
+    const command =
+        getInstallCommand();
+
+    if (!command) {
+        return null;
+    }
+
+
+    return {
+
+        name:
+            "Install Packages",
+
+        run:
+            command
+
+    };
+
+}
+
+
+/* =========================================================
+   Template Loading
+========================================================= */
+
+function loadTemplate() {
+
+    const type =
+        document.getElementById(
+            "templateSelect"
+        ).value;
+
+
+    const template =
+        JSON.parse(
+            JSON.stringify(
+                templates[type]
+            )
+        );
+
+
+    const branch =
+        document.getElementById(
+            "branchInput"
+        ).value
+        .trim()
+        ||
+        "main";
+
+
+    template.on = {
+
+        push: {
+
+            branches: [
+                branch
+            ]
+
+        },
+
+        pull_request: {
+
+            branches: [
+                branch
+            ]
+
+        }
+
+    };
+
+
+    switch (type) {
+
+        case "cpp":
+
+            document.getElementById(
+                "sourcePath"
+            ).value =
+                "src/main.cpp";
+
+            break;
+
+
+        case "c":
+
+            document.getElementById(
+                "sourcePath"
+            ).value =
+                "src/main.c";
+
+            break;
+
+
+        case "rust":
+
+            document.getElementById(
+                "sourcePath"
+            ).value =
+                "src/main.rs";
+
+            break;
+
+
+        case "csharp":
+
+            document.getElementById(
+                "sourcePath"
+            ).value =
+                "Program.cs";
+
+            break;
+
+
+        case "java":
+
+            document.getElementById(
+                "sourcePath"
+            ).value =
+                "src/main/java";
+
+            break;
+
+
+        case "python":
+
+            document.getElementById(
+                "sourcePath"
+            ).value =
+                "src";
+
+            break;
+
+
+        case "node":
+
+            document.getElementById(
+                "sourcePath"
+            ).value =
+                "src";
+
+            break;
+
+    }
+
+
+    applyPackageStepToTemplate(
+        template
+    );
+
+
+    document.getElementById(
+        "yjonInput"
+    ).value =
+        JSON.stringify(
+            template,
+            null,
+            2
+        );
+
+
+    updateCMakeVisibility();
+
+    updatePathInfo();
+
+    compileYjon();
+
+}
+
+
+function applyPackageStepToTemplate(template) {
+
+    const steps =
+        template.jobs?.build?.steps;
+
+    if (!steps) {
+        return;
+    }
+
+
+    const packageStep =
+        createPackageStep();
+
+
+    const oldIndex =
+        steps.findIndex(
+            step =>
+                step &&
+                step.name ===
+                    "Install Packages"
+        );
+
+
+    if (oldIndex !== -1) {
+
+        steps.splice(
+            oldIndex,
+            1
+        );
+
+    }
+
+
+    if (packageStep) {
+
+        let installIndex = -1;
+
+        for (
+            let i = 0;
+            i < steps.length;
+            i++
+        ) {
+
+            const name =
+                steps[i]?.name || "";
+
+            if (
+                name === "Install" ||
+                name === "Restore"
+            ) {
+
+                installIndex = i;
+
+                break;
+
+            }
+
+        }
+
+
+        if (installIndex !== -1) {
+
+            steps.splice(
+                installIndex,
+                0,
+                packageStep
+            );
+
+        } else {
+
+            steps.splice(
+                1,
+                0,
+                packageStep
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   Branch
+========================================================= */
+
+function applyBranch() {
+
+    const branch =
+        document.getElementById(
+            "branchInput"
+        ).value
+        .trim()
+        ||
+        "main";
+
+
+    const input =
+        document.getElementById(
+            "yjonInput"
+        );
+
+
+    if (!input.value.trim()) {
+
+        loadTemplate();
+
+        return;
+
+    }
+
+
+    try {
+
+        const obj =
+            JSON.parse(
+                removeComments(
+                    input.value
+                )
+            );
+
+
+        obj.on = {
+
+            push: {
+
+                branches: [
+                    branch
+                ]
+
+            },
+
+            pull_request: {
+
+                branches: [
+                    branch
+                ]
+
+            }
+
+        };
+
+
+        const packageStep =
+            createPackageStep();
+
+
+        if (
+            obj.jobs &&
+            obj.jobs.build &&
+            Array.isArray(
+                obj.jobs.build.steps
+            )
+        ) {
+
+            obj.jobs.build.steps =
+                obj.jobs.build.steps.filter(
+                    step =>
+                        step?.name !==
+                            "Install Packages"
+                );
+
+
+            if (packageStep) {
+
+                obj.jobs.build.steps.splice(
+                    1,
+                    0,
+                    packageStep
+                );
+
+            }
+
+        }
+
+
+        input.value =
+            JSON.stringify(
+                obj,
+                null,
+                2
+            );
+
+
+        compileYjon();
+
+    }
+
+    catch (e) {
+
+        compileYjon();
+
+    }
+
+}
+
+
+/* =========================================================
+   Path
+========================================================= */
+
+function updatePathInfo() {
+
+    const workflowDir =
+        normalizePath(
+            document.getElementById(
+                "workflowDir"
+            ).value
+        );
+
+
+    const workflowName =
+        normalizePath(
+            document.getElementById(
+                "workflowName"
+            ).value
+        );
+
+
+    const source =
+        normalizePath(
+            document.getElementById(
+                "sourcePath"
+            ).value
+        );
+
+
+    const cmake =
+        normalizePath(
+            document.getElementById(
+                "cmakePath"
+            ).value
+        );
+
+
+    document.getElementById(
+        "workflowPathView"
+    ).textContent =
+        workflowDir +
+        "/" +
+        workflowName;
+
+
+    document.getElementById(
+        "sourcePathView"
+    ).textContent =
+        source;
+
+
+    document.getElementById(
+        "cmakePathView"
+    ).textContent =
+        cmake;
+
+}
+
+
+/* =========================================================
+   CMake Visibility
+========================================================= */
+
+function updateCMakeVisibility() {
+
+    const type =
+        document.getElementById(
+            "templateSelect"
+        ).value;
+
+
+    const enabled =
+        type === "c" ||
+        type === "cpp";
+
+
+    document.getElementById(
+        "cmakePanel"
+    ).classList.toggle(
+        "hidden",
+        !enabled
+    );
+
+
+    document.getElementById(
+        "cmakePathRow"
+    ).style.display =
+        enabled
+            ? "block"
+            : "none";
+
+
+    if (enabled) {
+
+        document.getElementById(
+            "cmakeLanguage"
+        ).value =
+            type;
+
+
+        const source =
+            document.getElementById(
+                "sourcePath"
+            ).value;
+
+
+        document.getElementById(
+            "cmakeSource"
+        ).value =
+            source
+            ||
+            (
+                type === "cpp"
+                    ? "src/main.cpp"
+                    : "src/main.c"
+            );
+
+
+        generateCMake();
+
+    }
+    else {
+
+        document.getElementById(
+            "cmakeOutput"
+        ).textContent = "";
+
+    }
+
+}
+
+
+/* =========================================================
+   Lexer
+========================================================= */
+
+function removeComments(input) {
+
+    let result =
+        String(input || "");
+
+
+    result =
+        result.replace(
+            /\/\*[\s\S]*?\*\//g,
+            ""
+        );
+
+
+    result =
+        result.replace(
+            /(^|[^:])\/\/.*$/gm,
+            "$1"
+        );
+
+
+    return result.trim();
+
+}
+
+
+/* =========================================================
+   Compiler
+========================================================= */
+
+function compileYjon() {
+
+    const input =
+        document.getElementById(
+            "yjonInput"
+        );
+
+
+    const output =
+        document.getElementById(
+            "yamlOutput"
+        );
+
+
+    const text =
+        removeComments(
+            input.value
+        );
+
+
+    if (!text) {
+
+        output.textContent =
+            "";
+
+        return;
+
+    }
+
+
+    try {
+
+        const object =
+            JSON.parse(text);
+
+
+        const branch =
+            document.getElementById(
+                "branchInput"
+            ).value
+            .trim();
+
+
+        if (branch) {
+
+            object.on = {
+
+                push: {
+
+                    branches: [
+                        branch
+                    ]
+
+                },
+
+                pull_request: {
+
+                    branches: [
+                        branch
+                    ]
+
+                }
+
+            };
+
+        }
+
+
+        const packageStep =
+            createPackageStep();
+
+
+        if (
+            object.jobs &&
+            object.jobs.build &&
+            Array.isArray(
+                object.jobs.build.steps
+            )
+        ) {
+
+            object.jobs.build.steps =
+                object.jobs.build.steps.filter(
+                    step =>
+                        step?.name !==
+                            "Install Packages"
+                );
+
+
+            if (packageStep) {
+
+                object.jobs.build.steps.splice(
+                    1,
+                    0,
+                    packageStep
+                );
+
+            }
+
+        }
+
+
+        const yaml =
+            jsyaml.dump(
+                object,
+                {
+                    indent: 2,
+                    noRefs: true,
+                    lineWidth: -1
+                }
+            );
+
+
+        output.classList.remove(
+            "error"
+        );
+
+
+        output.textContent =
+            yaml;
+
+    }
+
+    catch (err) {
+
+        output.classList.add(
+            "error"
+        );
+
+
+        output.textContent =
+            "[Yjon 컴파일 에러]\n\n" +
+            err.message;
+
+    }
+
+}
+
+
+/* =========================================================
+   Copy / Download
+========================================================= */
+
+async function copyYAML() {
+
+    const text =
+        document.getElementById(
+            "yamlOutput"
+        ).textContent;
+
+
+    if (!text) {
+
+        alert(
+            "먼저 YAML을 생성하세요."
+        );
+
+        return;
+
+    }
+
+
+    await navigator.clipboard.writeText(
+        text
+    );
+
+
+    alert(
+        "YAML을 복사했습니다."
+    );
+
+}
+
+
+function downloadFile(
+    filename,
+    content
+) {
+
+    const blob =
+        new Blob(
+            [content],
+            {
+                type:
+                    "text/plain;charset=utf-8"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const a =
+        document.createElement(
+            "a"
+        );
+
+
+    a.href =
+        url;
+
+
+    a.download =
+        filename;
+
+
+    document.body.appendChild(
+        a
+    );
+
+
+    a.click();
+
+
+    a.remove();
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+function downloadWorkflow() {
+
+    const yaml =
+        document.getElementById(
+            "yamlOutput"
+        ).textContent;
+
+
+    if (!yaml) {
+
+        alert(
+            "먼저 YAML을 생성하세요."
+        );
+
+        return;
+
+    }
+
+
+    let filename =
+        normalizePath(
+            document.getElementById(
+                "workflowName"
+            ).value
+        );
+
+
+    if (!filename) {
+
+        filename =
+            "ci.yml";
+
+    }
+
+
+    downloadFile(
+        filename,
+        yaml
+    );
+
+}
+
+
+/* =========================================================
+   CMake
+========================================================= */
+
+function generateCMake() {
+
+    const type =
+        document.getElementById(
+            "templateSelect"
+        ).value;
+
+
+    if (
+        type !== "c" &&
+        type !== "cpp"
+    ) {
+
+        document.getElementById(
+            "cmakeOutput"
+        ).textContent =
+            "";
+
+        return;
+
+    }
+
+
+    const project =
+        document.getElementById(
+            "cmakeProject"
+        ).value
+        .trim()
+        ||
+        "MyProject";
+
+
+    const version =
+        document.getElementById(
+            "cmakeVersion"
+        ).value;
+
+
+    const source =
+        normalizePath(
+            document.getElementById(
+                "cmakeSource"
+            ).value
+        )
+        ||
+        (
+            type === "cpp"
+                ? "src/main.cpp"
+                : "src/main.c"
+        );
+
+
+    let output;
+
+
+    if (type === "cpp") {
+
+        output =
+`cmake_minimum_required(VERSION ${version})
+
+project(${project}
+    LANGUAGES CXX
+)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_executable(${project}
+    ${source}
+)
+
+enable_testing()
+
+# GitHub Actions
+# cmake -S . -B build
+# cmake --build build --config Release
+# ctest --test-dir build --output-on-failure
+`;
+
+    }
+    else {
+
+        output =
+`cmake_minimum_required(VERSION ${version})
+
+project(${project}
+    LANGUAGES C
+)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+add_executable(${project}
+    ${source}
+)
+
+enable_testing()
+
+# GitHub Actions
+# cmake -S . -B build
+# cmake --build build --config Release
+# ctest --test-dir build --output-on-failure
+`;
+
+    }
+
+
+    document.getElementById(
+        "cmakeOutput"
+    ).textContent =
+        output;
+
+}
+
+
+async function copyCMake() {
+
+    const type =
+        document.getElementById(
+            "templateSelect"
+        ).value;
+
+
+    if (
+        type !== "c" &&
+        type !== "cpp"
+    ) {
+
+        alert(
+            "CMake는 C/C++ 프로젝트에서만 사용할 수 있습니다."
+        );
+
+        return;
+
+    }
+
+
+    generateCMake();
+
+
+    await navigator.clipboard.writeText(
+        document.getElementById(
+            "cmakeOutput"
+        ).textContent
+    );
+
+
+    alert(
+        "CMakeLists.txt를 복사했습니다."
+    );
+
+}
+
+
+function downloadCMake() {
+
+    const type =
+        document.getElementById(
+            "templateSelect"
+        ).value;
+
+
+    if (
+        type !== "c" &&
+        type !== "cpp"
+    ) {
+
+        alert(
+            "CMake는 C/C++ 프로젝트에서만 사용할 수 있습니다."
+        );
+
+        return;
+
+    }
+
+
+    generateCMake();
+
+
+    downloadFile(
+        "CMakeLists.txt",
+        document.getElementById(
+            "cmakeOutput"
+        ).textContent
+    );
+
+}
+
+
+/* =========================================================
+   Library
+========================================================= */
+
+function getLibraryData() {
+
+    const data =
+        localStorage.getItem(
+            "yjon_library"
+        );
+
+
+    return data
+        ? JSON.parse(data)
+        : {};
+
+}
+
+
+function updateLibrarySelect() {
+
+    const select =
+        document.getElementById(
+            "librarySelect"
+        );
+
+
+    const library =
+        getLibraryData();
+
+
+    select.innerHTML =
+        `
+        <option value="">
+            -- 선택 --
+        </option>
+        `;
+
+
+    Object.keys(library)
+        .sort()
+        .forEach(
+            name => {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    name;
+
+
+                option.textContent =
+                    name;
+
+
+                select.appendChild(
+                    option
+                );
+
+            }
+        );
+
+}
+
+
+function saveToLibrary() {
+
+    const name =
+        document.getElementById(
+            "libNameInput"
+        ).value
+        .trim();
+
+
+    if (!name) {
+
+        alert(
+            "라이브러리 이름을 입력하세요."
+        );
+
+        return;
+
+    }
+
+
+    const library =
+        getLibraryData();
+
+
+    library[name] = {
+
+        yjon:
+            document.getElementById(
+                "yjonInput"
+            ).value,
+
+        branch:
+            document.getElementById(
+                "branchInput"
+            ).value,
+
+        template:
+            document.getElementById(
+                "templateSelect"
+            ).value,
+
+        packageManager:
+            document.getElementById(
+                "packageManager"
+            ).value,
+
+        packageInstallMode:
+            document.getElementById(
+                "packageInstallMode"
+            ).value,
+
+        packages:
+            getPackageList()
+
+    };
+
+
+    localStorage.setItem(
+        "yjon_library",
+        JSON.stringify(
+            library
+        )
+    );
+
+
+    updateLibrarySelect();
+
+
+    document.getElementById(
+        "librarySelect"
+    ).value =
+        name;
+
+
+    document.getElementById(
+        "libNameInput"
+    ).value =
+        "";
+
+
+    alert(
+        "라이브러리에 저장했습니다."
+    );
+
+}
+
+
+function loadFromLibrary() {
+
+    const name =
+        document.getElementById(
+            "librarySelect"
+        ).value;
+
+
+    if (!name) {
+        return;
+    }
+
+
+    const library =
+        getLibraryData();
+
+
+    const item =
+        library[name];
+
+
+    if (!item) {
+        return;
+    }
+
+
+    document.getElementById(
+        "yjonInput"
+    ).value =
+        item.yjon || "";
+
+
+    document.getElementById(
+        "branchInput"
+    ).value =
+        item.branch || "main";
+
+
+    document.getElementById(
+        "templateSelect"
+    ).value =
+        item.template || "node";
+
+
+    document.getElementById(
+        "packageManager"
+    ).value =
+        item.packageManager || "none";
+
+
+    document.getElementById(
+        "packageInstallMode"
+    ).value =
+        item.packageInstallMode || "normal";
+
+
+    document.getElementById(
+        "packageInput"
+    ).value =
+        Array.isArray(item.packages)
+            ? item.packages.join("\n")
+            : "";
+
+
+    updatePackagePreview();
+
+    updateCMakeVisibility();
+
+    updatePathInfo();
+
+    compileYjon();
+
+}
+
+
+function deleteFromLibrary() {
+
+    const select =
+        document.getElementById(
+            "librarySelect"
+        );
+
+
+    const name =
+        select.value;
+
+
+    if (!name) {
+
+        alert(
+            "삭제할 라이브러리를 선택하세요."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !confirm(
+            `"${name}" 라이브러리를 삭제할까요?`
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const library =
+        getLibraryData();
+
+
+    delete library[name];
+
+
+    localStorage.setItem(
+        "yjon_library",
+        JSON.stringify(
+            library
+        )
+    );
+
+
+    updateLibrarySelect();
+
+
+    document.getElementById(
+        "yjonInput"
+    ).value =
+        "";
+
+
+    document.getElementById(
+        "yamlOutput"
+    ).textContent =
+        "";
+
+
+    updateCMakeVisibility();
+
+}
+
+
+/* =========================================================
+   Init
+========================================================= */
+
+window.onload = () => {
+
+    updateLibrarySelect();
+
+    document.getElementById(
+        "templateSelect"
+    ).value =
+        "node";
+
+
+    document.getElementById(
+        "branchInput"
+    ).value =
+        "main";
+
+
+    document.getElementById(
+        "packageManager"
+    ).value =
+        "none";
+
+
+    document.getElementById(
+        "packageInstallMode"
+    ).value =
+        "normal";
+
+
+    updatePackagePreview();
+
+    updateCMakeVisibility();
+
+    updatePathInfo();
+
+    loadTemplate();
+
+};
+
+</script>
+
+</body>
+</html>
