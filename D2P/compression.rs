@@ -1,0 +1,2 @@
+
+use anyhow::Result; use xz2::write::XzEncoder; use std::io::Write; pub fn compress(data: &[u8]) -> Result<Vec<u8>> { let mut enc = XzEncoder::new(Vec::new(), 9); enc.write_all(data)?; Ok(enc.finish()?) } pub fn decompress(data: &[u8]) -> Result<Vec<u8>> { use xz2::read::XzDecoder; use std::io::Read; let mut dec = XzDecoder::new(data); let mut out = Vec::new(); dec.read_to_end(&mut out)?; Ok(out) }

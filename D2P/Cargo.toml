@@ -1,0 +1,2 @@
+
+[package] name = "tzz" version = "1.0.0" edition = "2021" [dependencies] clap = { version = "4.5", features = ["derive"] } image = "0.25" xz2 = "0.1" crc32fast = "1.4" chrono = "0.4" anyhow = "1.0" reed-solomon-erasure = "6.0"
